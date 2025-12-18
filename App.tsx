@@ -50,18 +50,7 @@ const MOCK_PROPERTIES: Property[] = [
   }
 ];
 
-declare global {
-  // Define AIStudio interface if not already present, ensuring compatibility with the expected methods
-  interface AIStudio {
-    hasSelectedApiKey(): Promise<boolean>;
-    openSelectKey(): Promise<void>;
-  }
-
-  interface Window {
-    // FIX: Changed aistudio type from 'any' to 'AIStudio' to match the existing global declaration and resolve type collisions.
-    aistudio?: AIStudio;
-  }
-}
+// Removed redundant declare global for AIStudio to fix duplicate identifier errors at lines 55-56
 
 type View = 'home' | 'property-detail' | 'ar-tool' | 'setup';
 
@@ -75,24 +64,31 @@ function App() {
 
   useEffect(() => {
     const checkApiKey = async () => {
-      // Prioridade para o process.env.API_KEY injetado
-      if (process.env.API_KEY && process.env.API_KEY !== 'undefined') {
+      // 1. Verifica se a chave já está injetada pelo ambiente (process.env)
+      if (process.env.API_KEY && process.env.API_KEY !== 'undefined' && process.env.API_KEY.length > 5) {
         setHasApiKey(true);
+        setCurrentView('home');
         return;
       }
 
-      // Se estiver no ambiente do AI Studio, verifica a seleção
-      if (window.aistudio) {
+      // 2. Se estiver no AI Studio, verifica se o usuário já selecionou uma chave
+      // Using type cast for window as any to access environmental global aistudio safely without duplicate identifier conflicts
+      if ((window as any).aistudio) {
         try {
-          const selected = await window.aistudio.hasSelectedApiKey();
+          const selected = await (window as any).aistudio.hasSelectedApiKey();
           setHasApiKey(selected);
-          if (!selected) setCurrentView('setup');
+          if (!selected) {
+            setCurrentView('setup');
+          } else {
+            setCurrentView('home');
+          }
         } catch (e) {
+          console.error("Erro ao verificar chave no AI Studio:", e);
           setHasApiKey(false);
           setCurrentView('setup');
         }
       } else {
-        // Se não houver process.env nem aistudio, assume que pode falhar mas tenta rodar
+        // 3. Caso contrário (local/produção sem process.env), assume que precisa de setup se a chave for obrigatória
         setHasApiKey(false);
         setCurrentView('setup');
       }
@@ -102,11 +98,16 @@ function App() {
   }, []);
 
   const handleSelectKey = async () => {
-    if (window.aistudio) {
-      await window.aistudio.openSelectKey();
-      // Assume sucesso conforme orientações para evitar race conditions
-      setHasApiKey(true);
-      setCurrentView('home');
+    // Using type cast for window as any to access environmental global aistudio safely without duplicate identifier conflicts
+    if ((window as any).aistudio) {
+      try {
+        await (window as any).aistudio.openSelectKey();
+        // Conforme as diretrizes, assumimos sucesso imediato para evitar race conditions
+        setHasApiKey(true);
+        setCurrentView('home');
+      } catch (err) {
+        console.error("Erro ao abrir seletor de chave:", err);
+      }
     } else {
       alert("Para usar as funções de IA, uma API Key deve estar configurada no ambiente.");
     }
@@ -135,7 +136,6 @@ function App() {
     setTimeout(() => setIsCopied(false), 2000);
   };
 
-  // View de Setup da API Key
   if (currentView === 'setup') {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
@@ -145,12 +145,12 @@ function App() {
               <Key size={40} />
             </div>
             <h1 className="text-2xl font-bold mb-2">Configuração Necessária</h1>
-            <p className="text-blue-100 opacity-90">Para habilitar o decorador IA e o assistente virtual, selecione sua chave de API.</p>
+            <p className="text-blue-100 opacity-90">Para habilitar o decorador IA e o assistente virtual, selecione sua chave de API do Gemini.</p>
           </div>
           <div className="p-8 space-y-6">
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
               <p className="text-sm text-slate-600 mb-4 leading-relaxed">
-                Este aplicativo utiliza os modelos mais recentes do <strong>Gemini</strong> para gerar decorações e responder dúvidas.
+                Este aplicativo utiliza os modelos <strong>Gemini 3</strong> e <strong>2.5 Flash</strong> para gerar decorações fotorealistas e conversas inteligentes.
               </p>
               <a 
                 href="https://ai.google.dev/gemini-api/docs/billing" 
@@ -169,7 +169,7 @@ function App() {
               Selecionar Chave de API
             </button>
             <p className="text-[10px] text-center text-slate-400">
-              Sua chave é mantida segura e utilizada apenas para as requisições de IA deste app.
+              Necessário projeto com faturamento ativado no Google Cloud.
             </p>
           </div>
         </div>
@@ -222,7 +222,7 @@ function App() {
                 <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=60&w=1920" alt="Building" className="w-full h-full object-cover" />
               </div>
               <div className="relative max-w-7xl mx-auto px-4 text-center">
-                <h1 className="text-4xl md:text-6xl font-extrabold mb-4">Realidade Aumentada Imobiliária</h1>
+                <h1 className="text-4xl md:text-6xl font-extrabold mb-4 text-white">Realidade Aumentada Imobiliária</h1>
                 <p className="text-lg md:text-xl text-slate-200 max-w-2xl mx-auto mb-10">Mobiliamos seus sonhos com inteligência artificial generativa em tempo real.</p>
                 <button onClick={() => navTo('ar-tool')} className="bg-blue-600 px-10 py-4 rounded-full font-bold hover:bg-blue-700 transition-all hover:scale-105 shadow-xl flex items-center gap-3 mx-auto">
                   <Box size={24} />
