@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { DesignStyle, ConstructionPhaseType } from '../types';
 
@@ -8,9 +9,17 @@ Seu objetivo é agendar visitas e responder dúvidas técnicas sobre os imóveis
 Responda sempre em Português do Brasil de forma concisa.
 `;
 
+const getApiKey = () => {
+  const key = process.env.API_KEY;
+  if (!key || key === 'undefined') {
+    throw new Error("API Key não configurada. Por favor, selecione sua chave nas configurações do app.");
+  }
+  return key;
+};
+
 export const sendMessageToAgent = async (history: { role: string, parts: { text: string }[] }[], newMessage: string): Promise<string> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: getApiKey() });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: [...history, { role: 'user', parts: [{ text: newMessage }] }],
@@ -20,15 +29,18 @@ export const sendMessageToAgent = async (history: { role: string, parts: { text:
     });
 
     return response.text || "Desculpe, não consegui processar sua resposta no momento.";
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini Chat Error:", error);
+    if (error.message?.includes("API key")) {
+        throw new Error("Chave de API inválida ou ausente. reconecte nas configurações.");
+    }
     throw error;
   }
 };
 
 export const generateRoomDecoration = async (base64Image: string, style: DesignStyle, instructions: string): Promise<string | undefined> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: getApiKey() });
     
     const matches = base64Image.match(/^data:([^;]+);base64,(.+)$/);
     if (!matches || matches.length !== 3) {
@@ -39,9 +51,9 @@ export const generateRoomDecoration = async (base64Image: string, style: DesignS
 
     const prompt = `Atue como um arquiteto de interiores de alto padrão. 
     Redecore este ambiente fielmente no estilo: ${style}. 
-    Instruções extras: ${instructions}.
-    Mantenha a arquitetura original (paredes, janelas), mas mude móveis e cores. 
-    Resultado fotorealista.`;
+    Instruções extras do cliente: ${instructions}.
+    Mantenha as paredes e janelas originais, mas mude móveis e revestimentos. 
+    O resultado deve ser fotorealista, como uma imagem de catálogo imobiliário pronto.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image', 
@@ -72,7 +84,7 @@ export const generateRoomDecoration = async (base64Image: string, style: DesignS
 
 export const generateConstructionPhase = async (imageUrl: string, phase: ConstructionPhaseType, propertyDescription: string): Promise<string | undefined> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: getApiKey() });
     let imagePart = null;
     
     try {
@@ -88,10 +100,10 @@ export const generateConstructionPhase = async (imageUrl: string, phase: Constru
         imagePart = { inlineData: { mimeType: matches[1], data: matches[2] } };
       }
     } catch (e) {
-      console.warn("Fallback de imagem");
+      console.warn("Usando apenas prompt de texto");
     }
 
-    const prompt = `Gere uma foto real de um canteiro de obras modernos na fase de ${phase}. Projeto: ${propertyDescription}.`;
+    const prompt = `Gere uma foto realística de um canteiro de obras modernos na fase de ${phase.toUpperCase()}. Contexto do projeto: ${propertyDescription}. Qualidade fotográfica 4k.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
