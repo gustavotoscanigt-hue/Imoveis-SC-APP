@@ -10,26 +10,22 @@ Responda sempre em Português do Brasil de forma concisa.
 `;
 
 const getApiKey = () => {
-  const key = process.env.API_KEY;
-  if (!key || key === 'undefined') {
-    throw new Error("API Key não configurada. Por favor, adicione a variável API_KEY no seu ambiente.");
-  }
-  return key;
+  return process.env.API_KEY || "";
 };
 
 // Função para identificar a chave ativa (mostra apenas o final por segurança)
 export const getActiveKeySuffix = (): string => {
-  try {
-    const key = getApiKey();
-    return `...${key.slice(-4)}`;
-  } catch (e) {
-    return "Não configurada";
-  }
+  const key = getApiKey();
+  if (!key || key === 'undefined') return "Não configurada";
+  return `...${key.slice(-4)}`;
 };
 
 export const sendMessageToAgent = async (history: { role: string, parts: { text: string }[] }[], newMessage: string): Promise<string> => {
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error("API_KEY_MISSING");
+
   try {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: [...history, { role: 'user', parts: [{ text: newMessage }] }],
@@ -46,8 +42,11 @@ export const sendMessageToAgent = async (history: { role: string, parts: { text:
 };
 
 export const generateRoomDecoration = async (base64Image: string, style: DesignStyle, instructions: string): Promise<string | undefined> => {
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error("API_KEY_MISSING");
+
   try {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    const ai = new GoogleGenAI({ apiKey });
     
     const matches = base64Image.match(/^data:([^;]+);base64,(.+)$/);
     if (!matches || matches.length !== 3) {
@@ -90,8 +89,11 @@ export const generateRoomDecoration = async (base64Image: string, style: DesignS
 };
 
 export const generateConstructionPhase = async (imageUrl: string, phase: ConstructionPhaseType, propertyDescription: string): Promise<string | undefined> => {
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error("API_KEY_MISSING");
+
   try {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    const ai = new GoogleGenAI({ apiKey });
     let imagePart = null;
     
     try {

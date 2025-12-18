@@ -9,14 +9,14 @@ import { Home, Box, Phone, Menu, X, ArrowLeft, HardHat, Share2, Check, ShieldChe
 import { getActiveKeySuffix } from './services/geminiService';
 
 // Extensão de tipos para o ambiente do AI Studio
-// Adjusted to match existing global AIStudio interface and modifiers to resolve TS errors
 declare global {
   interface AIStudio {
     hasSelectedApiKey: () => Promise<boolean>;
     openSelectKey: () => Promise<void>;
   }
   interface Window {
-    readonly aistudio: AIStudio;
+    // Fixed: Removed readonly to match environment declaration and avoid "identical modifiers" error
+    aistudio: AIStudio;
   }
 }
 
@@ -77,20 +77,31 @@ function App() {
 
   useEffect(() => {
     const checkKey = async () => {
+      // Se já temos uma env injetada, está ativa.
+      if (activeKeySuffix !== "Não configurada") {
+        setIsKeyActive(true);
+        return;
+      }
+      
+      // Senão, checamos via API do AI Studio
       if (window.aistudio) {
         const hasKey = await window.aistudio.hasSelectedApiKey();
-        setIsKeyActive(hasKey || activeKeySuffix !== "Não configurada");
+        setIsKeyActive(hasKey);
       }
     };
     checkKey();
+    // Checagem periódica discreta para reagir a mudanças de env sem reload se possível
+    const timer = setInterval(checkKey, 3000);
+    return () => clearInterval(timer);
   }, [activeKeySuffix]);
 
   const handleSelectKey = async () => {
     if (window.aistudio) {
       await window.aistudio.openSelectKey();
-      // Assume sucesso conforme diretrizes
+      // Assume sucesso imediato conforme diretrizes para evitar race condition
       setIsKeyActive(true);
-      window.location.reload(); // Recarrega para garantir injeção da env
+      // Opcional: Pequeno delay para a env ser injetada antes do reload se necessário
+      setTimeout(() => window.location.reload(), 500);
     }
   };
 
@@ -276,7 +287,7 @@ function App() {
               <ShieldCheck size={16} className={isKeyActive ? "text-green-500" : "text-white"} />
               Status Gemini: 
               <span className={isKeyActive ? "text-white" : "text-blue-100"}>
-                {isKeyActive ? `Ativo (${activeKeySuffix})` : "Conectar API Key"}
+                {isKeyActive && activeKeySuffix !== "Não configurada" ? `Ativo (${activeKeySuffix})` : "Conectar API Key"}
               </span>
               {!isKeyActive && <Key size={14} className="ml-1" />}
               {isKeyActive && <Wifi size={14} className="text-blue-500 animate-pulse" />}

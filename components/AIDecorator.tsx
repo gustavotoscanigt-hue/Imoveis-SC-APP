@@ -1,5 +1,7 @@
+
+import { getActiveKeySuffix } from '../services/geminiService';
 import React, { useState, useRef } from 'react';
-import { Upload, Sparkles, Image as ImageIcon, RefreshCw, Download, AlertCircle } from 'lucide-react';
+import { Upload, Sparkles, Image as ImageIcon, RefreshCw, Download, AlertCircle, Key } from 'lucide-react';
 import { DesignStyle, GenerationState } from '../types';
 import { generateRoomDecoration } from '../services/geminiService';
 
@@ -12,6 +14,8 @@ export const AIDecorator: React.FC = () => {
   const [instructions, setInstructions] = useState('');
   const [genState, setGenState] = useState<GenerationState>({ isGenerating: false });
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isOffline = getActiveKeySuffix() === "Não configurada";
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -28,6 +32,10 @@ export const AIDecorator: React.FC = () => {
   };
 
   const handleGenerate = async () => {
+    if (isOffline) {
+      setGenState({ isGenerating: false, error: "Conecte sua API Key no rodapé da página para habilitar o decorador IA." });
+      return;
+    }
     if (!selectedFile) return;
 
     setGenState({ isGenerating: true, error: undefined });
@@ -46,11 +54,11 @@ export const AIDecorator: React.FC = () => {
         }
       } catch (err: any) {
         console.error("API Error Details:", err);
-        // Exibe o erro real para diagnóstico
-        setGenState({ 
-          isGenerating: false, 
-          error: `Erro técnico: ${err.message || 'Falha na comunicação com a IA'}`
-        });
+        const errorMsg = err.message === "API_KEY_MISSING" 
+          ? "API Key não encontrada. Conecte no rodapé." 
+          : `Erro técnico: ${err.message || 'Falha na comunicação com a IA'}`;
+        
+        setGenState({ isGenerating: false, error: errorMsg });
       }
     };
   };
@@ -100,13 +108,17 @@ export const AIDecorator: React.FC = () => {
 
             <button
               onClick={handleGenerate}
-              disabled={!selectedFile || genState.isGenerating}
+              disabled={genState.isGenerating || (!selectedFile && !isOffline)}
               className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 text-white font-semibold shadow-lg transition-all ${
-                !selectedFile || genState.isGenerating ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 active:scale-95'
+                isOffline 
+                  ? 'bg-amber-500 hover:bg-amber-600 active:scale-95'
+                  : !selectedFile || genState.isGenerating 
+                    ? 'bg-slate-400 cursor-not-allowed' 
+                    : 'bg-blue-600 hover:bg-blue-700 active:scale-95'
               }`}
             >
-              {genState.isGenerating ? <RefreshCw className="animate-spin" size={20} /> : <Sparkles size={20} />}
-              {genState.isGenerating ? 'Redecorando...' : 'Gerar Nova Decoração'}
+              {isOffline ? <Key size={20} /> : genState.isGenerating ? <RefreshCw className="animate-spin" size={20} /> : <Sparkles size={20} />}
+              {isOffline ? 'Conectar API no rodapé' : genState.isGenerating ? 'Redecorando...' : 'Gerar Nova Decoração'}
             </button>
           </div>
         </div>
@@ -145,9 +157,9 @@ export const AIDecorator: React.FC = () => {
             <div className="bg-red-50 text-red-700 p-4 rounded-xl text-sm border border-red-100 flex items-start gap-3 animate-fade-in-up">
               <AlertCircle className="flex-shrink-0 mt-0.5" size={20} />
               <div className="flex flex-col">
-                <span className="font-bold">Ocorreu um erro:</span>
+                <span className="font-bold">Aviso:</span>
                 <span className="opacity-90">{genState.error}</span>
-                <button onClick={handleGenerate} className="text-blue-600 font-semibold mt-2 hover:underline w-fit">Tentar novamente</button>
+                {!isOffline && <button onClick={handleGenerate} className="text-blue-600 font-semibold mt-2 hover:underline w-fit">Tentar novamente</button>}
               </div>
             </div>
           )}
