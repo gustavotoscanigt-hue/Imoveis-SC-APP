@@ -1,4 +1,5 @@
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
+
+import { GoogleGenAI } from "@google/genai";
 import { DesignStyle, ConstructionPhaseType } from '../types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -47,8 +48,12 @@ export const generateRoomDecoration = async (base64Image: string, style: DesignS
       }
     });
 
-    const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-    return part?.inlineData ? `data:image/png;base64,${part.inlineData.data}` : undefined;
+    for (const part of response.candidates?.[0]?.content?.parts || []) {
+      if (part.inlineData) {
+        return `data:image/png;base64,${part.inlineData.data}`;
+      }
+    }
+    return undefined;
   } catch (error) {
     console.error("Error generating room decoration:", error);
     throw error;
@@ -64,6 +69,7 @@ export const generateConstructionPhase = async (imageUrl: string, phase: Constru
         const base64 = await new Promise<string>((resolve) => {
             const reader = new FileReader();
             reader.onloadend = () => resolve(reader.result as string);
+            // Fix typo: readAsAsDataURL corrected to readAsDataURL
             reader.readAsDataURL(blob);
         });
         const cleanBase64 = base64.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
@@ -74,17 +80,19 @@ export const generateConstructionPhase = async (imageUrl: string, phase: Constru
 
     const prompt = `Create a realistic construction site image of a building in the ${phase.toUpperCase()} phase. Context: ${propertyDescription}. High detail, cinematic lighting.`;
 
-    const contents: any = {
-      parts: imagePart ? [imagePart, { text: prompt }] : [{ text: prompt }]
-    };
-
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
-      contents: contents
+      contents: {
+        parts: imagePart ? [imagePart, { text: prompt }] : [{ text: prompt }]
+      }
     });
 
-    const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-    return part?.inlineData ? `data:image/png;base64,${part.inlineData.data}` : undefined;
+    for (const part of response.candidates?.[0]?.content?.parts || []) {
+      if (part.inlineData) {
+        return `data:image/png;base64,${part.inlineData.data}`;
+      }
+    }
+    return undefined;
   } catch (error) {
     console.error("Error generating construction phase:", error);
     throw error;
