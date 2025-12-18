@@ -1,12 +1,24 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PropertyCard } from './components/PropertyCard';
 import { ChatAgent } from './components/ChatAgent';
 import { AIDecorator } from './components/AIDecorator';
 import { ConstructionMode } from './components/ConstructionMode';
 import { Property } from './types';
-import { Home, Box, Phone, Menu, X, ArrowLeft, HardHat, Share2, Check, ShieldCheck, Wifi } from 'lucide-react';
+import { Home, Box, Phone, Menu, X, ArrowLeft, HardHat, Share2, Check, ShieldCheck, Wifi, Key } from 'lucide-react';
 import { getActiveKeySuffix } from './services/geminiService';
+
+// Extensão de tipos para o ambiente do AI Studio
+// Adjusted to match existing global AIStudio interface and modifiers to resolve TS errors
+declare global {
+  interface AIStudio {
+    hasSelectedApiKey: () => Promise<boolean>;
+    openSelectKey: () => Promise<void>;
+  }
+  interface Window {
+    readonly aistudio: AIStudio;
+  }
+}
 
 // Mock Data
 const MOCK_PROPERTIES: Property[] = [
@@ -59,8 +71,28 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showConstructionMode, setShowConstructionMode] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [isKeyActive, setIsKeyActive] = useState(false);
 
   const activeKeySuffix = getActiveKeySuffix();
+
+  useEffect(() => {
+    const checkKey = async () => {
+      if (window.aistudio) {
+        const hasKey = await window.aistudio.hasSelectedApiKey();
+        setIsKeyActive(hasKey || activeKeySuffix !== "Não configurada");
+      }
+    };
+    checkKey();
+  }, [activeKeySuffix]);
+
+  const handleSelectKey = async () => {
+    if (window.aistudio) {
+      await window.aistudio.openSelectKey();
+      // Assume sucesso conforme diretrizes
+      setIsKeyActive(true);
+      window.location.reload(); // Recarrega para garantir injeção da env
+    }
+  };
 
   const handlePropertySelect = (property: Property) => {
     setSelectedProperty(property);
@@ -231,17 +263,31 @@ function App() {
           </div>
           <p className="text-sm">Desenvolvido com tecnologia de ponta em IA para o setor imobiliário.</p>
           
-          {/* Diagnostic Indicator */}
+          {/* Diagnostic Indicator / Button */}
           <div className="flex justify-center pt-4">
-            <div className="inline-flex items-center gap-2 bg-slate-800/50 border border-slate-700 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              <ShieldCheck size={14} className={activeKeySuffix !== "Não configurada" ? "text-green-500" : "text-red-500"} />
+            <button 
+              onClick={!isKeyActive ? handleSelectKey : undefined}
+              className={`inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${
+                isKeyActive 
+                  ? 'bg-slate-800/50 border-slate-700 text-slate-400 cursor-default' 
+                  : 'bg-blue-600 border-blue-500 text-white hover:bg-blue-700 animate-bounce shadow-lg shadow-blue-500/20'
+              }`}
+            >
+              <ShieldCheck size={16} className={isKeyActive ? "text-green-500" : "text-white"} />
               Status Gemini: 
-              <span className={activeKeySuffix !== "Não configurada" ? "text-white" : "text-red-400"}>
-                {activeKeySuffix !== "Não configurada" ? `Ativo (${activeKeySuffix})` : "Offline"}
+              <span className={isKeyActive ? "text-white" : "text-blue-100"}>
+                {isKeyActive ? `Ativo (${activeKeySuffix})` : "Conectar API Key"}
               </span>
-              <Wifi size={12} className={activeKeySuffix !== "Não configurada" ? "text-blue-500 animate-pulse" : "text-slate-600"} />
-            </div>
+              {!isKeyActive && <Key size={14} className="ml-1" />}
+              {isKeyActive && <Wifi size={14} className="text-blue-500 animate-pulse" />}
+            </button>
           </div>
+
+          {!isKeyActive && (
+            <p className="text-[10px] text-slate-500 max-w-xs mx-auto">
+              Clique acima para selecionar uma chave do seu projeto Google AI Studio e habilitar as funções de IA.
+            </p>
+          )}
 
           <div className="flex justify-center gap-6 text-xs font-bold uppercase tracking-widest pt-8">
             <span className="hover:text-blue-400 cursor-pointer">Privacidade</span>
