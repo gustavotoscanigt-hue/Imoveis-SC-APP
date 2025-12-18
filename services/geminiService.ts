@@ -9,13 +9,9 @@ Seu objetivo é agendar visitas e responder dúvidas técnicas sobre os imóveis
 Responda sempre em Português do Brasil de forma concisa.
 `;
 
-const getAiClient = () => {
-  return new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
-};
-
 export const sendMessageToAgent = async (history: { role: string, parts: { text: string }[] }[], newMessage: string): Promise<string> => {
   try {
-    const ai = getAiClient();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: [...history, { role: 'user', parts: [{ text: newMessage }] }],
@@ -33,7 +29,7 @@ export const sendMessageToAgent = async (history: { role: string, parts: { text:
 
 export const generateRoomDecoration = async (base64Image: string, style: DesignStyle, instructions: string): Promise<string | undefined> => {
   try {
-    const ai = getAiClient();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
     
     const matches = base64Image.match(/^data:([^;]+);base64,(.+)$/);
     if (!matches || matches.length !== 3) {
@@ -48,14 +44,15 @@ export const generateRoomDecoration = async (base64Image: string, style: DesignS
     Mantenha as paredes e janelas originais, mas mude móveis e revestimentos. 
     O resultado deve ser fotorealista, como uma imagem de catálogo imobiliário pronto.`;
 
+    // Alterado para passar o objeto de conteúdo diretamente em vez de um array, otimizando para o modelo de imagem
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image', 
-      contents: [{
+      contents: {
         parts: [
           { inlineData: { mimeType, data } },
           { text: prompt }
         ]
-      }]
+      }
     });
 
     const candidate = response.candidates?.[0];
@@ -77,7 +74,7 @@ export const generateRoomDecoration = async (base64Image: string, style: DesignS
 
 export const generateConstructionPhase = async (imageUrl: string, phase: ConstructionPhaseType, propertyDescription: string): Promise<string | undefined> => {
   try {
-    const ai = getAiClient();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
     let imagePart = null;
     
     try {
@@ -100,9 +97,9 @@ export const generateConstructionPhase = async (imageUrl: string, phase: Constru
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
-      contents: [{
+      contents: {
         parts: imagePart ? [imagePart, { text: prompt }] : [{ text: prompt }]
-      }]
+      }
     });
 
     const candidate = response.candidates?.[0];

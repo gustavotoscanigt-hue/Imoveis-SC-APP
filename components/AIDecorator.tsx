@@ -17,8 +17,9 @@ export const AIDecorator: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      if (file.size > 4 * 1024 * 1024) {
-        setGenState({ isGenerating: false, error: "Imagem muito grande. Use uma foto de até 4MB." });
+      // Limite de 3MB para garantir sucesso na API
+      if (file.size > 3 * 1024 * 1024) {
+        setGenState({ isGenerating: false, error: "Imagem muito pesada. Tente uma foto de até 3MB para garantir o processamento." });
         return;
       }
       setSelectedFile(file);
@@ -43,11 +44,16 @@ export const AIDecorator: React.FC = () => {
         if (resultUrl) {
           setGenState({ isGenerating: false, resultImage: resultUrl });
         } else {
-          setGenState({ isGenerating: false, error: "A IA não conseguiu gerar a decoração. Tente outra imagem." });
+          setGenState({ isGenerating: false, error: "A IA não conseguiu processar esta imagem específica. Tente outra foto ou estilo." });
         }
       } catch (err: any) {
         console.error("API Error Details:", err);
-        setGenState({ isGenerating: false, error: "Falha na comunicação com a IA. Tente novamente mais tarde." });
+        // Exibe a mensagem de erro real para ajudar no diagnóstico
+        const technicalError = err.message || "Falha desconhecida";
+        setGenState({ 
+          isGenerating: false, 
+          error: `Erro na IA: ${technicalError}. Certifique-se de que sua conexão está estável e a imagem é clara.` 
+        });
       }
     };
   };
