@@ -5,7 +5,8 @@ import { ChatAgent } from './components/ChatAgent';
 import { AIDecorator } from './components/AIDecorator';
 import { ConstructionMode } from './components/ConstructionMode';
 import { Property } from './types';
-import { Home, Box, Phone, Menu, X, ArrowLeft, HardHat, Share2, Check } from 'lucide-react';
+import { Home, Box, Phone, Menu, X, ArrowLeft, HardHat, Share2, Check, ShieldCheck, Wifi } from 'lucide-react';
+import { getActiveKeySuffix } from './services/geminiService';
 
 // Mock Data
 const MOCK_PROPERTIES: Property[] = [
@@ -58,6 +59,8 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showConstructionMode, setShowConstructionMode] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+
+  const activeKeySuffix = getActiveKeySuffix();
 
   const handlePropertySelect = (property: Property) => {
     setSelectedProperty(property);
@@ -220,14 +223,27 @@ function App() {
         )}
       </main>
 
-      <footer className="bg-slate-900 text-slate-500 py-16 border-t border-slate-800">
+      <footer className="bg-slate-900 text-slate-500 py-16 border-t border-slate-800 relative">
         <div className="max-w-7xl mx-auto px-4 text-center space-y-4">
           <div className="flex justify-center items-center">
              <Box className="h-6 w-6 text-blue-500 mr-2" />
              <span className="text-xl font-bold text-white tracking-tight">ImobAR</span>
           </div>
           <p className="text-sm">Desenvolvido com tecnologia de ponta em IA para o setor imobiliário.</p>
-          <div className="flex justify-center gap-6 text-xs font-bold uppercase tracking-widest pt-4">
+          
+          {/* Diagnostic Indicator */}
+          <div className="flex justify-center pt-4">
+            <div className="inline-flex items-center gap-2 bg-slate-800/50 border border-slate-700 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              <ShieldCheck size={14} className={activeKeySuffix !== "Não configurada" ? "text-green-500" : "text-red-500"} />
+              Status Gemini: 
+              <span className={activeKeySuffix !== "Não configurada" ? "text-white" : "text-red-400"}>
+                {activeKeySuffix !== "Não configurada" ? `Ativo (${activeKeySuffix})` : "Offline"}
+              </span>
+              <Wifi size={12} className={activeKeySuffix !== "Não configurada" ? "text-blue-500 animate-pulse" : "text-slate-600"} />
+            </div>
+          </div>
+
+          <div className="flex justify-center gap-6 text-xs font-bold uppercase tracking-widest pt-8">
             <span className="hover:text-blue-400 cursor-pointer">Privacidade</span>
             <span className="hover:text-blue-400 cursor-pointer">Termos</span>
             <span className="hover:text-blue-400 cursor-pointer">Suporte</span>

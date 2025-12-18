@@ -12,9 +12,19 @@ Responda sempre em Português do Brasil de forma concisa.
 const getApiKey = () => {
   const key = process.env.API_KEY;
   if (!key || key === 'undefined') {
-    throw new Error("API Key não configurada. Por favor, selecione sua chave nas configurações do app.");
+    throw new Error("API Key não configurada. Por favor, adicione a variável API_KEY no seu ambiente.");
   }
   return key;
+};
+
+// Função para identificar a chave ativa (mostra apenas o final por segurança)
+export const getActiveKeySuffix = (): string => {
+  try {
+    const key = getApiKey();
+    return `...${key.slice(-4)}`;
+  } catch (e) {
+    return "Não configurada";
+  }
 };
 
 export const sendMessageToAgent = async (history: { role: string, parts: { text: string }[] }[], newMessage: string): Promise<string> => {
@@ -31,9 +41,6 @@ export const sendMessageToAgent = async (history: { role: string, parts: { text:
     return response.text || "Desculpe, não consegui processar sua resposta no momento.";
   } catch (error: any) {
     console.error("Gemini Chat Error:", error);
-    if (error.message?.includes("API key")) {
-        throw new Error("Chave de API inválida ou ausente. reconecte nas configurações.");
-    }
     throw error;
   }
 };
