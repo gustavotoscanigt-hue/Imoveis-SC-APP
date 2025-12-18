@@ -1,7 +1,6 @@
 
-import { getActiveKeySuffix } from '../services/geminiService';
 import React, { useState, useRef } from 'react';
-import { Upload, Sparkles, Image as ImageIcon, RefreshCw, Download, AlertCircle, Key } from 'lucide-react';
+import { Upload, Sparkles, RefreshCw, Download, AlertCircle } from 'lucide-react';
 import { DesignStyle, GenerationState } from '../types';
 import { generateRoomDecoration } from '../services/geminiService';
 
@@ -15,13 +14,11 @@ export const AIDecorator: React.FC = () => {
   const [genState, setGenState] = useState<GenerationState>({ isGenerating: false });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isOffline = getActiveKeySuffix() === "Não configurada";
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (file.size > 4 * 1024 * 1024) {
-        setGenState({ isGenerating: false, error: "Imagem muito grande. Use uma foto de até 4MB para melhor performance." });
+        setGenState({ isGenerating: false, error: "Imagem muito grande. Use uma foto de até 4MB." });
         return;
       }
       setSelectedFile(file);
@@ -32,10 +29,6 @@ export const AIDecorator: React.FC = () => {
   };
 
   const handleGenerate = async () => {
-    if (isOffline) {
-      setGenState({ isGenerating: false, error: "Conecte sua API Key no rodapé da página para habilitar o decorador IA." });
-      return;
-    }
     if (!selectedFile) return;
 
     setGenState({ isGenerating: true, error: undefined });
@@ -54,11 +47,7 @@ export const AIDecorator: React.FC = () => {
         }
       } catch (err: any) {
         console.error("API Error Details:", err);
-        const errorMsg = err.message === "API_KEY_MISSING" 
-          ? "API Key não encontrada. Conecte no rodapé." 
-          : `Erro técnico: ${err.message || 'Falha na comunicação com a IA'}`;
-        
-        setGenState({ isGenerating: false, error: errorMsg });
+        setGenState({ isGenerating: false, error: "Falha na comunicação com a IA. Tente novamente mais tarde." });
       }
     };
   };
@@ -67,7 +56,7 @@ export const AIDecorator: React.FC = () => {
     <div className="max-w-6xl mx-auto p-4 md:p-8">
       <div className="text-center mb-10">
         <h2 className="text-3xl font-bold text-slate-800 mb-2">Decorador Virtual IA</h2>
-        <p className="text-slate-600">Envie uma foto e visualize o potencial do seu imóvel.</p>
+        <p className="text-slate-600">Envie uma foto e visualize o potencial do seu imóvel mobiliado.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -108,17 +97,15 @@ export const AIDecorator: React.FC = () => {
 
             <button
               onClick={handleGenerate}
-              disabled={genState.isGenerating || (!selectedFile && !isOffline)}
+              disabled={genState.isGenerating || !selectedFile}
               className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 text-white font-semibold shadow-lg transition-all ${
-                isOffline 
-                  ? 'bg-amber-500 hover:bg-amber-600 active:scale-95'
-                  : !selectedFile || genState.isGenerating 
-                    ? 'bg-slate-400 cursor-not-allowed' 
-                    : 'bg-blue-600 hover:bg-blue-700 active:scale-95'
+                !selectedFile || genState.isGenerating 
+                  ? 'bg-slate-400 cursor-not-allowed' 
+                  : 'bg-blue-600 hover:bg-blue-700 active:scale-95'
               }`}
             >
-              {isOffline ? <Key size={20} /> : genState.isGenerating ? <RefreshCw className="animate-spin" size={20} /> : <Sparkles size={20} />}
-              {isOffline ? 'Conectar API no rodapé' : genState.isGenerating ? 'Redecorando...' : 'Gerar Nova Decoração'}
+              {genState.isGenerating ? <RefreshCw className="animate-spin" size={20} /> : <Sparkles size={20} />}
+              {genState.isGenerating ? 'Redecorando...' : 'Gerar Nova Decoração'}
             </button>
           </div>
         </div>
@@ -159,7 +146,6 @@ export const AIDecorator: React.FC = () => {
               <div className="flex flex-col">
                 <span className="font-bold">Aviso:</span>
                 <span className="opacity-90">{genState.error}</span>
-                {!isOffline && <button onClick={handleGenerate} className="text-blue-600 font-semibold mt-2 hover:underline w-fit">Tentar novamente</button>}
               </div>
             </div>
           )}
