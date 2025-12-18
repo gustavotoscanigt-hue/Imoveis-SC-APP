@@ -1,5 +1,11 @@
-// SW básico para permitir instalação PWA
+const CACHE_NAME = 'imobar-v1';
+
 self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(['/']);
+    })
+  );
   self.skipWaiting();
 });
 
@@ -8,6 +14,9 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Apenas repassa as requisições, necessário para o navegador considerar "instalável"
-  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+  event.respondWith(
+    fetch(event.request).catch(() => {
+      return caches.match(event.request) || caches.match('/');
+    })
+  );
 });

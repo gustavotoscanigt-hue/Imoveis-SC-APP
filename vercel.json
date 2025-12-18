@@ -1,7 +1,15 @@
 {
   "rewrites": [
     {
-      "source": "/((?!manifest.webmanifest|sw.js|assets/.*).*)",
+      "source": "/sw.js",
+      "destination": "/sw.js"
+    },
+    {
+      "source": "/manifest.webmanifest",
+      "destination": "/manifest.webmanifest"
+    },
+    {
+      "source": "/((?!assets/|.*\\.).*)",
       "destination": "/index.html"
     }
   ]
