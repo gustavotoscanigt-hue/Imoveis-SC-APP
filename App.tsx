@@ -1,11 +1,22 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PropertyCard } from './components/PropertyCard';
 import { ChatAgent } from './components/ChatAgent';
 import { AIDecorator } from './components/AIDecorator';
 import { ConstructionMode } from './components/ConstructionMode';
 import { Property } from './types';
-import { Home, Box, Phone, Menu, X, ArrowLeft, HardHat, Share2, Check } from 'lucide-react';
+import { Home, Box, Phone, Menu, X, ArrowLeft, HardHat, Share2, Check, ShieldCheck, Wifi, Key } from 'lucide-react';
+
+// Extensão de tipos para o ambiente do AI Studio
+// Fix: All declarations of 'aistudio' must have identical modifiers.
+declare global {
+  interface Window {
+    aistudio?: {
+      hasSelectedApiKey: () => Promise<boolean>;
+      openSelectKey: () => Promise<void>;
+    };
+  }
+}
 
 // Mock Data
 const MOCK_PROPERTIES: Property[] = [
@@ -58,6 +69,29 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showConstructionMode, setShowConstructionMode] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [isKeyActive, setIsKeyActive] = useState(false);
+
+  useEffect(() => {
+    const checkKey = async () => {
+      if (window.aistudio) {
+        const hasKey = await window.aistudio.hasSelectedApiKey();
+        setIsKeyActive(hasKey);
+      }
+    };
+    checkKey();
+    // Checagem periódica discreta para reagir a mudanças de env
+    const timer = setInterval(checkKey, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleSelectKey = async () => {
+    if (window.aistudio) {
+      await window.aistudio.openSelectKey();
+      // Assume sucesso imediato conforme diretrizes
+      setIsKeyActive(true);
+      window.location.reload();
+    }
+  };
 
   const handlePropertySelect = (property: Property) => {
     setSelectedProperty(property);
@@ -120,7 +154,7 @@ function App() {
           <div className="animate-fade-in">
             <div className="relative bg-slate-900 text-white py-20 overflow-hidden">
               <div className="absolute inset-0 opacity-40">
-                <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad11ab?auto=format&fit=crop&q=60&w=1920" alt="Building" className="w-full h-full object-cover" />
+                <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=60&w=1920" alt="Building" className="w-full h-full object-cover" />
               </div>
               <div className="relative max-w-7xl mx-auto px-4 text-center">
                 <h1 className="text-4xl md:text-6xl font-extrabold mb-4 text-white">Realidade Aumentada Imobiliária</h1>
@@ -220,7 +254,7 @@ function App() {
         )}
       </main>
 
-      <footer className="bg-slate-900 text-slate-500 py-16 border-t border-slate-800">
+      <footer className="bg-slate-900 text-slate-500 py-16 border-t border-slate-800 relative">
         <div className="max-w-7xl mx-auto px-4 text-center space-y-4">
           <div className="flex justify-center items-center">
              <Box className="h-6 w-6 text-blue-500 mr-2" />
@@ -228,6 +262,26 @@ function App() {
           </div>
           <p className="text-sm">Desenvolvido com tecnologia de ponta em IA para o setor imobiliário.</p>
           
+          {/* Diagnostic Indicator / Button */}
+          <div className="flex justify-center pt-4">
+            <button 
+              onClick={!isKeyActive ? handleSelectKey : undefined}
+              className={`inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${
+                isKeyActive 
+                  ? 'bg-slate-800/50 border-slate-700 text-slate-400 cursor-default' 
+                  : 'bg-blue-600 border-blue-500 text-white hover:bg-blue-700 animate-bounce shadow-lg shadow-blue-500/20'
+              }`}
+            >
+              <ShieldCheck size={16} className={isKeyActive ? "text-green-500" : "text-white"} />
+              Status IA: 
+              <span className={isKeyActive ? "text-white" : "text-blue-100"}>
+                {isKeyActive ? "Ativo" : "CONECTAR API KEY"}
+              </span>
+              {!isKeyActive && <Key size={14} className="ml-1" />}
+              {isKeyActive && <Wifi size={14} className="text-blue-500 animate-pulse" />}
+            </button>
+          </div>
+
           <div className="flex justify-center gap-6 text-xs font-bold uppercase tracking-widest pt-8">
             <span className="hover:text-blue-400 cursor-pointer">Privacidade</span>
             <span className="hover:text-blue-400 cursor-pointer">Termos</span>

@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { Upload, Sparkles, RefreshCw, Download, AlertCircle } from 'lucide-react';
+import { Upload, Sparkles, RefreshCw, Download, AlertCircle, Key } from 'lucide-react';
 import { DesignStyle, GenerationState } from '../types';
 import { generateRoomDecoration } from '../services/geminiService';
 
@@ -17,15 +17,21 @@ export const AIDecorator: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      // Limite de 3MB para garantir sucesso na API
       if (file.size > 3 * 1024 * 1024) {
-        setGenState({ isGenerating: false, error: "Imagem muito pesada. Tente uma foto de até 3MB para garantir o processamento." });
+        setGenState({ isGenerating: false, error: "Imagem muito pesada. Tente uma foto de até 3MB." });
         return;
       }
       setSelectedFile(file);
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
       setGenState({ isGenerating: false, resultImage: undefined, error: undefined });
+    }
+  };
+
+  const handleConnectKey = async () => {
+    if (window.aistudio) {
+      await window.aistudio.openSelectKey();
+      window.location.reload();
     }
   };
 
@@ -44,15 +50,17 @@ export const AIDecorator: React.FC = () => {
         if (resultUrl) {
           setGenState({ isGenerating: false, resultImage: resultUrl });
         } else {
-          setGenState({ isGenerating: false, error: "A IA não conseguiu processar esta imagem específica. Tente outra foto ou estilo." });
+          setGenState({ isGenerating: false, error: "A IA não retornou imagem. Tente outra foto." });
         }
       } catch (err: any) {
         console.error("API Error Details:", err);
-        // Exibe a mensagem de erro real para ajudar no diagnóstico
-        const technicalError = err.message || "Falha desconhecida";
+        const isKeyMissing = err.message?.toLowerCase().includes("api key is missing");
+        
         setGenState({ 
           isGenerating: false, 
-          error: `Erro na IA: ${technicalError}. Certifique-se de que sua conexão está estável e a imagem é clara.` 
+          error: isKeyMissing 
+            ? "Você precisa conectar sua API Key do Google AI Studio para usar este recurso." 
+            : `Erro: ${err.message}` 
         });
       }
     };
@@ -147,12 +155,24 @@ export const AIDecorator: React.FC = () => {
           </div>
 
           {genState.error && (
-            <div className="bg-red-50 text-red-700 p-4 rounded-xl text-sm border border-red-100 flex items-start gap-3 animate-fade-in-up">
-              <AlertCircle className="flex-shrink-0 mt-0.5" size={20} />
-              <div className="flex flex-col">
-                <span className="font-bold">Aviso:</span>
-                <span className="opacity-90">{genState.error}</span>
+            <div className="bg-white p-6 rounded-2xl shadow-lg border-2 border-red-100 flex flex-col items-center text-center gap-4 animate-fade-in-up">
+              <div className="bg-red-50 p-3 rounded-full text-red-600">
+                <AlertCircle size={32} />
               </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">Problema na Conexão com IA</h3>
+                <p className="text-slate-600 text-sm mt-1">{genState.error}</p>
+              </div>
+              
+              {genState.error.includes("API Key") && (
+                <button 
+                  onClick={handleConnectKey}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-full font-bold flex items-center gap-2 hover:bg-blue-700 transition-all shadow-md shadow-blue-200"
+                >
+                  <Key size={18} />
+                  CONECTAR API KEY AGORA
+                </button>
+              )}
             </div>
           )}
         </div>

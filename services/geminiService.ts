@@ -10,8 +10,11 @@ Responda sempre em Português do Brasil de forma concisa.
 `;
 
 export const sendMessageToAgent = async (history: { role: string, parts: { text: string }[] }[], newMessage: string): Promise<string> => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) throw new Error("API key is missing. Please select an API key.");
+
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: [...history, { role: 'user', parts: [{ text: newMessage }] }],
@@ -28,8 +31,11 @@ export const sendMessageToAgent = async (history: { role: string, parts: { text:
 };
 
 export const generateRoomDecoration = async (base64Image: string, style: DesignStyle, instructions: string): Promise<string | undefined> => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) throw new Error("API key is missing. Please select an API key.");
+
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+    const ai = new GoogleGenAI({ apiKey });
     
     const matches = base64Image.match(/^data:([^;]+);base64,(.+)$/);
     if (!matches || matches.length !== 3) {
@@ -44,7 +50,6 @@ export const generateRoomDecoration = async (base64Image: string, style: DesignS
     Mantenha as paredes e janelas originais, mas mude móveis e revestimentos. 
     O resultado deve ser fotorealista, como uma imagem de catálogo imobiliário pronto.`;
 
-    // Alterado para passar o objeto de conteúdo diretamente em vez de um array, otimizando para o modelo de imagem
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image', 
       contents: {
@@ -73,8 +78,11 @@ export const generateRoomDecoration = async (base64Image: string, style: DesignS
 };
 
 export const generateConstructionPhase = async (imageUrl: string, phase: ConstructionPhaseType, propertyDescription: string): Promise<string | undefined> => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) throw new Error("API key is missing. Please select an API key.");
+
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+    const ai = new GoogleGenAI({ apiKey });
     let imagePart = null;
     
     try {
