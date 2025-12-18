@@ -1,6 +1,5 @@
-const CACHE_NAME = 'imobar-v1';
-
-self.addEventListener('install', (event) => {
+// Simple passthrough service worker
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
@@ -9,5 +8,6 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Always fetch from network to avoid "Internal Error" or white screens in development
   event.respondWith(fetch(event.request));
 });
