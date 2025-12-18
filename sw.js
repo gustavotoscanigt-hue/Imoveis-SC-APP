@@ -1,5 +1,5 @@
-const CACHE_NAME = 'imobar-v2';
-const ASSETS = [
+const CACHE_NAME = 'imobar-v3';
+const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/manifest.webmanifest'
@@ -7,25 +7,41 @@ const ASSETS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS_TO_CACHE);
+    })
   );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
+    caches.keys().then((cacheNames) => {
       return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
       );
     })
   );
-  self.clients.claim();
+  return self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-  // O Chrome exige um listener de fetch para habilitar a instalação
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match('/');
+      })
+    );
+    return;
+  }
+
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
+    })
   );
 });
