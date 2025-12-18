@@ -5,9 +5,8 @@ import { ChatAgent } from './components/ChatAgent';
 import { AIDecorator } from './components/AIDecorator';
 import { ConstructionMode } from './components/ConstructionMode';
 import { Property } from './types';
-import { Box, Menu, X, ArrowLeft, HardHat, Share2, Check, Home, Phone } from 'lucide-react';
+import { Box, Menu, X, ArrowLeft, HardHat, Share2, Check, Home, Phone, Calendar, Info, Award, Users, Shield } from 'lucide-react';
 
-// Mock Data
 const MOCK_PROPERTIES: Property[] = [
   {
     id: '1',
@@ -17,10 +16,10 @@ const MOCK_PROPERTIES: Property[] = [
     beds: 3,
     baths: 2,
     sqft: 145,
-    description: 'Apartamento de alto padrão com vista panorâmica. Acabamentos em mármore importado e tecnologia de automação residencial inclusa.',
+    description: 'Um ícone de sofisticação nos Jardins. Este empreendimento une a tradição do bairro com a tecnologia de ponta em construção sustentável. Vidros com atenuação acústica e automação total via smartphone.',
     image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=800',
     images: [],
-    features: ['Automação', 'Varanda Gourmet', 'Piscina Aquecida']
+    features: ['Automação', 'Varanda Gourmet', 'Piscina Aquecida', 'Laje Protendida']
   },
   {
     id: '2',
@@ -30,10 +29,10 @@ const MOCK_PROPERTIES: Property[] = [
     beds: 1,
     baths: 1,
     sqft: 90,
-    description: 'Loft moderno com pé direito duplo e estilo industrial autêntico. Ideal para quem busca sofisticação e localização privilegiada.',
+    description: 'Inspirado nos lofts de Nova York, este projeto traz o conceito "raw luxury". Pé direito de 5 metros, concreto aparente polido e infraestrutura completa para home office de alto desempenho.',
     image: 'https://images.unsplash.com/photo-1536376074432-bc12f74258b7?auto=format&fit=crop&q=80&w=800',
     images: [],
-    features: ['Pé Direito Duplo', 'Conceito Aberto', 'Academia']
+    features: ['Pé Direito Duplo', 'Conceito Aberto', 'Rooftop Lounge']
   },
   {
     id: '3',
@@ -43,14 +42,14 @@ const MOCK_PROPERTIES: Property[] = [
     beds: 4,
     baths: 4,
     sqft: 320,
-    description: 'Casa espetacular em condomínio fechado. Integração total com a natureza, energia solar e sistema de reuso de água.',
+    description: 'Residência sustentável com certificação LEED. O projeto prioriza a iluminação natural e o fluxo de ar, reduzindo o consumo de energia em até 40%. Luxo e consciência ambiental em perfeita harmonia.',
     image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=800',
     images: [],
-    features: ['Jardim Privativo', 'Energia Solar', 'Segurança 24h']
+    features: ['Jardim Vertical', 'Energia Fotovoltaica', 'Segurança Biométrica']
   }
 ];
 
-type View = 'home' | 'property-detail' | 'ar-tool';
+type View = 'home' | 'property-detail' | 'ar-tool' | 'about';
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('home');
@@ -72,75 +71,96 @@ function App() {
     window.scrollTo(0, 0);
   };
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.origin);
-    setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 2000);
-  };
-
   return (
-    <div className="min-h-screen flex flex-col relative">
-      <nav className="bg-white sticky top-0 z-30 shadow-sm border-b border-slate-100">
+    <div className="min-h-screen flex flex-col font-sans text-slate-900 bg-white selection:bg-blue-100 selection:text-blue-700">
+      {/* Top Professional Nav */}
+      <nav className="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center cursor-pointer" onClick={() => navTo('home')}>
-              <Box className="h-8 w-8 text-blue-600 mr-2" />
-              <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-indigo-700">ImobAR</span>
+          <div className="flex justify-between h-20 items-center">
+            <div className="flex items-center cursor-pointer group" onClick={() => navTo('home')}>
+              <div className="bg-blue-600 p-2 rounded-lg mr-3 shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform">
+                <Box className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-2xl font-black tracking-tighter text-slate-900">Imob<span className="text-blue-600">AR</span></span>
             </div>
             
-            <div className="hidden md:flex items-center space-x-6">
-              <button onClick={() => navTo('home')} className={`text-sm font-medium transition-colors ${currentView === 'home' ? 'text-blue-600' : 'text-slate-600 hover:text-blue-500'}`}>Imóveis</button>
-              <button onClick={() => navTo('ar-tool')} className={`text-sm font-medium transition-colors ${currentView === 'ar-tool' ? 'text-blue-600' : 'text-slate-600 hover:text-blue-500'}`}>Simulador IA</button>
-              <div className="h-6 w-px bg-slate-200 mx-2"></div>
-              <button onClick={handleCopyLink} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${isCopied ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
-                {isCopied ? <Check size={16} /> : <Share2 size={16} />}
-                {isCopied ? 'Link Copiado!' : 'Compartilhar'}
+            <div className="hidden md:flex items-center space-x-10">
+              <NavButton active={currentView === 'home'} onClick={() => navTo('home')}>Portfólio</NavButton>
+              <NavButton active={currentView === 'ar-tool'} onClick={() => navTo('ar-tool')}>Simulador IA</NavButton>
+              <NavButton active={currentView === 'about'} onClick={() => navTo('about')}>A Construtora</NavButton>
+              <button className="bg-slate-900 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 active:scale-95">
+                Área do Cliente
               </button>
-              <button className="bg-blue-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-blue-700 transition-colors shadow-md shadow-blue-200">Agendar Visita</button>
             </div>
 
-            <div className="flex items-center md:hidden gap-4">
-              <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="text-slate-600 p-2">
-                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
-            </div>
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="md:hidden p-2 text-slate-600">
+              {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+            </button>
           </div>
         </div>
 
         {isMobileMenuOpen && (
-          <div className="md:hidden bg-white border-b border-slate-100 animate-fade-in p-4 space-y-4">
-            <button onClick={() => navTo('home')} className="block w-full text-left py-2 font-medium">Imóveis</button>
-            <button onClick={() => navTo('ar-tool')} className="block w-full text-left py-2 font-medium text-blue-600">Simulador IA</button>
+          <div className="md:hidden bg-white border-b border-slate-100 animate-fade-in p-6 space-y-4 shadow-xl">
+            <button onClick={() => navTo('home')} className="block w-full text-left py-3 text-lg font-semibold">Portfólio</button>
+            <button onClick={() => navTo('ar-tool')} className="block w-full text-left py-3 text-lg font-semibold text-blue-600">Simulador IA</button>
+            <button onClick={() => navTo('about')} className="block w-full text-left py-3 text-lg font-semibold">Sobre Nós</button>
           </div>
         )}
       </nav>
 
-      <main className="flex-grow bg-slate-50">
+      <main className="flex-grow">
         {currentView === 'home' && (
           <div className="animate-fade-in">
-            <div className="relative bg-slate-900 text-white py-20 overflow-hidden">
-              <div className="absolute inset-0 opacity-40">
-                <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad11ab?auto=format&fit=crop&q=60&w=1920" alt="Building" className="w-full h-full object-cover" />
+            {/* High-End Hero */}
+            <div className="relative bg-slate-950 py-32 overflow-hidden">
+              <div className="absolute inset-0 z-0">
+                <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=2000" alt="Arquiteto" className="w-full h-full object-cover opacity-30 grayscale" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
               </div>
-              <div className="relative max-w-7xl mx-auto px-4 text-center">
-                <h1 className="text-4xl md:text-6xl font-extrabold mb-4 text-white">Realidade Aumentada Imobiliária</h1>
-                <p className="text-lg md:text-xl text-slate-200 max-w-2xl mx-auto mb-10">Mobiliamos seus sonhos com inteligência artificial generativa em tempo real.</p>
-                <button onClick={() => navTo('ar-tool')} className="bg-blue-600 px-10 py-4 rounded-full font-bold hover:bg-blue-700 transition-all hover:scale-105 shadow-xl flex items-center gap-3 mx-auto">
-                  <Box size={24} />
-                  Decorador Virtual IA
-                </button>
+              
+              <div className="relative z-10 max-w-7xl mx-auto px-4 text-center md:text-left grid md:grid-cols-2 items-center gap-12">
+                <div>
+                  <div className="inline-flex items-center bg-blue-600/20 text-blue-400 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase mb-6 border border-blue-500/30">
+                    <Award size={14} className="mr-2" /> Tecnologia Imobiliária 4.0
+                  </div>
+                  <h1 className="text-5xl md:text-7xl font-black text-white leading-tight mb-6">
+                    O futuro da sua <br/> <span className="text-blue-500">nova moradia.</span>
+                  </h1>
+                  <p className="text-xl text-slate-400 mb-10 max-w-lg leading-relaxed">
+                    A ImobAR utiliza inteligência artificial generativa para que você personalize e visualize seu futuro lar antes mesmo do primeiro tijolo.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <button onClick={() => navTo('home')} className="bg-white text-slate-950 px-8 py-4 rounded-2xl font-bold hover:bg-blue-50 transition-all flex items-center justify-center gap-2">
+                      Ver Portfólio <ArrowLeft className="rotate-180" size={20} />
+                    </button>
+                    <button onClick={() => navTo('ar-tool')} className="bg-slate-800 text-white border border-slate-700 px-8 py-4 rounded-2xl font-bold hover:bg-slate-700 transition-all">
+                      Testar Decorador IA
+                    </button>
+                  </div>
+                </div>
+                <div className="hidden md:grid grid-cols-2 gap-4">
+                  <StatCard icon={<Home />} label="Entregues" value="+15k" />
+                  <StatCard icon={<Users />} label="Clientes" value="+40k" />
+                  <StatCard icon={<Shield />} label="Garantia" value="10 anos" />
+                  <StatCard icon={<Award />} label="Prêmios" value="Top 5" />
+                </div>
               </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 py-16">
-              <div className="flex items-center justify-between mb-10">
-                <h2 className="text-3xl font-bold text-slate-800">Empreendimentos</h2>
-                <div className="hidden md:flex gap-2">
-                  <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">Prontos</span>
-                  <span className="bg-slate-100 text-slate-600 text-xs font-bold px-3 py-1 rounded-full">Em Obra</span>
+            {/* Properties Section */}
+            <div className="max-w-7xl mx-auto px-4 py-24">
+              <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+                <div>
+                  <h2 className="text-4xl font-black text-slate-900 mb-4">Empreendimentos Exclusivos</h2>
+                  <p className="text-slate-500 text-lg">Curadoria dos melhores projetos para investimento e moradia.</p>
+                </div>
+                <div className="flex p-1 bg-slate-100 rounded-xl">
+                  <button className="px-6 py-2 bg-white text-blue-600 font-bold rounded-lg shadow-sm">Todos</button>
+                  <button className="px-6 py-2 text-slate-500 font-bold">Lançamentos</button>
+                  <button className="px-6 py-2 text-slate-500 font-bold">Prontos</button>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                 {MOCK_PROPERTIES.map(prop => (
                   <PropertyCard key={prop.id} property={prop} onSelect={handlePropertySelect} />
                 ))}
@@ -150,69 +170,76 @@ function App() {
         )}
 
         {currentView === 'ar-tool' && (
-          <div className="py-12 animate-fade-in">
+          <div className="bg-slate-50 py-20 min-h-screen animate-fade-in">
             <AIDecorator />
           </div>
         )}
 
         {currentView === 'property-detail' && selectedProperty && (
-          <div className="max-w-7xl mx-auto px-4 py-8 animate-fade-in">
-            <button onClick={() => navTo('home')} className="flex items-center text-slate-500 hover:text-blue-600 mb-8 font-medium">
-              <ArrowLeft size={20} className="mr-2" />
-              Ver outros imóveis
+          <div className="max-w-7xl mx-auto px-4 py-12 animate-fade-in">
+            <button onClick={() => navTo('home')} className="flex items-center text-slate-400 hover:text-blue-600 mb-10 font-bold tracking-tight transition-colors">
+              <ArrowLeft size={20} className="mr-2" /> VOLTAR PARA LISTAGEM
             </button>
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-              <div className="space-y-6">
-                <div className="rounded-3xl overflow-hidden shadow-2xl h-[450px] border-4 border-white">
-                  <img src={selectedProperty.image} alt={selectedProperty.title} className="w-full h-full object-cover" />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16">
+              <div className="lg:col-span-7 space-y-8">
+                <div className="relative group">
+                  <div className="rounded-[40px] overflow-hidden shadow-2xl h-[550px] border-8 border-white">
+                    <img src={selectedProperty.image} alt={selectedProperty.title} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="absolute -bottom-6 -right-6 bg-blue-600 text-white p-10 rounded-[40px] shadow-2xl hidden md:block">
+                    <p className="text-sm font-bold opacity-80 mb-1 uppercase tracking-widest">Valor de Mercado</p>
+                    <p className="text-3xl font-black">{selectedProperty.price}</p>
+                  </div>
                 </div>
                 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <ToolIcon icon={<Box />} label="Decorar IA" onClick={() => navTo('ar-tool')} primary />
-                  <ToolIcon 
-                    icon={<HardHat />} 
-                    label="Modo Obra" 
-                    active={showConstructionMode} 
-                    onClick={() => setShowConstructionMode(!showConstructionMode)} 
-                  />
-                  <ToolIcon icon={<Home />} label="Tour 360" />
-                  <ToolIcon icon={<Phone />} label="Agendar" />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-8">
+                  <ToolAction icon={<Box />} label="Decorador IA" onClick={() => navTo('ar-tool')} active />
+                  <ToolAction icon={<HardHat />} label="Acompanhar Obra" onClick={() => setShowConstructionMode(true)} />
+                  <ToolAction icon={<Calendar />} label="Agendar Visita" />
+                  <ToolAction icon={<Info />} label="Memorial" />
                 </div>
               </div>
               
-              <div className="space-y-8">
-                <div>
-                  <h1 className="text-4xl font-black text-slate-900 mb-2">{selectedProperty.title}</h1>
-                  <p className="text-3xl text-blue-600 font-bold">{selectedProperty.price}</p>
-                </div>
-
+              <div className="lg:col-span-5 space-y-12">
                 {showConstructionMode ? (
                   <div className="animate-fade-in-up">
+                    <button onClick={() => setShowConstructionMode(false)} className="mb-4 text-xs font-bold text-blue-600 flex items-center gap-1">
+                       <ArrowLeft size={14} /> VOLTAR PARA DETALHES
+                    </button>
                     <ConstructionMode property={selectedProperty} />
                   </div>
                 ) : (
-                  <>
-                    <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 grid grid-cols-2 gap-8">
-                      <Detail label="Localização" value={selectedProperty.location} />
-                      <Detail label="Área Útil" value={`${selectedProperty.sqft} m²`} />
-                      <Detail label="Dormitórios" value={selectedProperty.beds} />
-                      <Detail label="Banheiros" value={selectedProperty.baths} />
+                  <div className="space-y-10">
+                    <div>
+                      <h1 className="text-5xl font-black text-slate-900 mb-4 tracking-tight">{selectedProperty.title}</h1>
+                      <p className="text-slate-500 text-xl font-medium">{selectedProperty.location}</p>
                     </div>
 
-                    <div className="prose prose-slate">
-                      <h3 className="text-xl font-bold text-slate-800">Descrição do Projeto</h3>
-                      <p className="text-slate-600 leading-relaxed text-lg">{selectedProperty.description}</p>
+                    <div className="grid grid-cols-2 gap-6">
+                      <SpecItem label="Área Útil" value={`${selectedProperty.sqft}m²`} />
+                      <SpecItem label="Quartos" value={selectedProperty.beds} />
+                      <SpecItem label="Vagas" value="2" />
+                      <SpecItem label="Status" value="Obras 85%" />
+                    </div>
+
+                    <div className="p-8 bg-slate-50 rounded-3xl border border-slate-100">
+                      <h3 className="text-lg font-bold text-slate-900 mb-4">Sobre o Conceito</h3>
+                      <p className="text-slate-600 leading-relaxed">{selectedProperty.description}</p>
                     </div>
 
                     <div className="flex flex-wrap gap-2">
                       {selectedProperty.features.map((feat, idx) => (
-                        <span key={idx} className="bg-white text-slate-600 border border-slate-200 px-4 py-2 rounded-xl text-sm font-semibold shadow-sm">
+                        <span key={idx} className="bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider">
                           {feat}
                         </span>
                       ))}
                     </div>
-                  </>
+
+                    <button className="w-full bg-blue-600 text-white py-6 rounded-3xl font-black text-xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3">
+                      Falar com Especialista <Phone size={24} />
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
@@ -220,18 +247,40 @@ function App() {
         )}
       </main>
 
-      <footer className="bg-slate-900 text-slate-500 py-16 border-t border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 text-center space-y-4">
-          <div className="flex justify-center items-center">
-             <Box className="h-6 w-6 text-blue-500 mr-2" />
-             <span className="text-xl font-bold text-white tracking-tight">ImobAR</span>
+      <footer className="bg-slate-950 text-slate-500 py-24">
+        <div className="max-w-7xl mx-auto px-4 grid md:grid-cols-4 gap-16">
+          <div className="space-y-6">
+            <div className="flex items-center">
+               <Box className="h-8 w-8 text-blue-500 mr-2" />
+               <span className="text-2xl font-black text-white">ImobAR</span>
+            </div>
+            <p className="text-sm leading-relaxed">
+              Redefinindo o mercado imobiliário através da visão computacional e inteligência artificial de última geração.
+            </p>
           </div>
-          <p className="text-sm">Desenvolvido com tecnologia de ponta em IA para o setor imobiliário.</p>
-          
-          <div className="flex justify-center gap-6 text-xs font-bold uppercase tracking-widest pt-8">
-            <span className="hover:text-blue-400 cursor-pointer">Privacidade</span>
-            <span className="hover:text-blue-400 cursor-pointer">Termos</span>
-            <span className="hover:text-blue-400 cursor-pointer">Suporte</span>
+          <div>
+            <h4 className="text-white font-bold mb-6">Empreendimentos</h4>
+            <ul className="space-y-3 text-sm">
+              <li className="hover:text-blue-400 cursor-pointer">Residenciais</li>
+              <li className="hover:text-blue-400 cursor-pointer">Comerciais</li>
+              <li className="hover:text-blue-400 cursor-pointer">Lançamentos</li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-white font-bold mb-6">Empresa</h4>
+            <ul className="space-y-3 text-sm">
+              <li className="hover:text-blue-400 cursor-pointer">Sobre Nós</li>
+              <li className="hover:text-blue-400 cursor-pointer">Trabalhe Conosco</li>
+              <li className="hover:text-blue-400 cursor-pointer">Imprensa</li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-white font-bold mb-6">Suporte</h4>
+            <ul className="space-y-3 text-sm">
+              <li className="hover:text-blue-400 cursor-pointer">Central de Ajuda</li>
+              <li className="hover:text-blue-400 cursor-pointer">Portal do Cliente</li>
+              <li className="hover:text-blue-400 cursor-pointer">Privacidade</li>
+            </ul>
           </div>
         </div>
       </footer>
@@ -241,32 +290,53 @@ function App() {
   );
 }
 
-function ToolIcon({ icon, label, onClick, active, primary }: any) {
+function NavButton({ children, active, onClick }: any) {
   return (
-    <div 
+    <button 
       onClick={onClick}
-      className={`p-4 rounded-2xl border text-center cursor-pointer transition-all duration-300 group ${
-        active 
-          ? 'bg-blue-600 border-blue-600 text-white shadow-lg' 
-          : primary 
-            ? 'bg-blue-50 border-blue-100 text-blue-600 hover:bg-blue-100'
-            : 'bg-white border-slate-100 text-slate-600 hover:border-blue-300 hover:shadow-md'
+      className={`text-sm font-bold transition-all border-b-2 py-2 ${
+        active ? 'text-blue-600 border-blue-600' : 'text-slate-500 border-transparent hover:text-slate-900 hover:border-slate-200'
       }`}
     >
-      <div className={`mx-auto mb-2 transition-transform duration-300 group-hover:scale-110 ${active ? 'text-white' : ''}`}>
-        {React.cloneElement(icon, { size: 24 })}
-      </div>
-      <span className="text-[10px] font-black uppercase tracking-wider">{label}</span>
+      {children}
+    </button>
+  );
+}
+
+function StatCard({ icon, label, value }: any) {
+  return (
+    <div className="bg-white/5 backdrop-blur-sm border border-white/10 p-6 rounded-2xl">
+      <div className="text-blue-500 mb-2">{React.cloneElement(icon, { size: 24 })}</div>
+      <p className="text-white text-2xl font-black">{value}</p>
+      <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">{label}</p>
     </div>
   );
 }
 
-function Detail({ label, value }: any) {
+function SpecItem({ label, value }: any) {
   return (
-    <div className="space-y-1">
-      <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">{label}</p>
-      <p className="text-slate-800 font-bold">{value}</p>
+    <div className="border-b border-slate-100 pb-3">
+      <p className="text-[10px] uppercase font-black text-slate-400 tracking-widest mb-1">{label}</p>
+      <p className="text-slate-900 font-bold text-lg">{value}</p>
     </div>
+  );
+}
+
+function ToolAction({ icon, label, onClick, active }: any) {
+  return (
+    <button 
+      onClick={onClick}
+      className={`flex flex-col items-center justify-center p-6 rounded-3xl border-2 transition-all duration-300 group ${
+        active 
+          ? 'bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-100 scale-105' 
+          : 'bg-white border-slate-100 text-slate-600 hover:border-blue-300 hover:text-blue-600'
+      }`}
+    >
+      <div className={`mb-3 transition-transform group-hover:scale-110`}>
+        {React.cloneElement(icon, { size: 28 })}
+      </div>
+      <span className="text-[10px] font-black uppercase tracking-widest text-center">{label}</span>
+    </button>
   );
 }
 

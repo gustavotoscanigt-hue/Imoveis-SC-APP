@@ -10,8 +10,8 @@ Responda sempre em Português do Brasil de forma concisa.
 `;
 
 const getAiClient = () => {
-  // Confia que o ambiente (Vercel/AI Studio) proveu a chave.
-  return new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+  // Use process.env.API_KEY directly as required by the guidelines
+  return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
 export const sendMessageToAgent = async (history: { role: string, parts: { text: string }[] }[], newMessage: string): Promise<string> => {
@@ -25,6 +25,7 @@ export const sendMessageToAgent = async (history: { role: string, parts: { text:
       },
     });
 
+    // response.text is a property, not a method
     return response.text || "Desculpe, não consegui processar sua resposta no momento.";
   } catch (error: any) {
     console.error("Gemini Chat Error:", error);
@@ -64,6 +65,7 @@ export const generateRoomDecoration = async (base64Image: string, style: DesignS
       return undefined;
     }
 
+    // Correctly iterate through parts to find the image part
     for (const part of candidate.content.parts) {
       if (part.inlineData) {
         return `data:image/png;base64,${part.inlineData.data}`;
@@ -109,6 +111,7 @@ export const generateConstructionPhase = async (imageUrl: string, phase: Constru
     const candidate = response.candidates?.[0];
     if (!candidate || !candidate.content || !candidate.content.parts) return undefined;
 
+    // Correctly iterate through parts to find the image part
     for (const part of candidate.content.parts) {
       if (part.inlineData) {
         return `data:image/png;base64,${part.inlineData.data}`;

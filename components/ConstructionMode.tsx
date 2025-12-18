@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { Property, ConstructionPhaseType } from '../types';
 import { generateConstructionPhase } from '../services/geminiService';
-import { Hammer, HardHat, RefreshCw, Pickaxe, Ruler, ArrowRight, AlertTriangle } from 'lucide-react';
+import { Hammer, HardHat, RefreshCw, Pickaxe, Ruler, ArrowRight, Activity, Zap, CheckCircle2 } from 'lucide-react';
 
 interface ConstructionModeProps {
   property: Property;
@@ -9,26 +10,30 @@ interface ConstructionModeProps {
 
 const PHASES: ConstructionPhaseType[] = ['Fundação', 'Estrutura', 'Alvenaria', 'Acabamento'];
 
-const PHASE_DETAILS: Record<ConstructionPhaseType, { materials: string[], description: string, progress: number }> = {
+const PHASE_DETAILS: Record<ConstructionPhaseType, { materials: string[], description: string, progress: number, active: boolean }> = {
   'Fundação': {
-    materials: ['Concreto Usinado C-30', 'Aço CA-50', 'Formas de Madeira', 'Brita e Areia'],
-    description: 'Fase inicial focada na estabilidade. Inclui escavação, estaqueamento e concretagem das sapatas.',
-    progress: 15
+    materials: ['Estacas Hélice Contínua', 'Armação de Aço CA-50', 'Concreto C-30'],
+    description: 'Etapa concluída. Toda a infraestrutura profunda foi executada com monitoramento digital de carga.',
+    progress: 100,
+    active: false
   },
   'Estrutura': {
-    materials: ['Vigas de Concreto', 'Lajes Treliçadas', 'Escoramento Metálico', 'Tela Soldada'],
-    description: 'Levantamento do esqueleto do edifício. Pilares, vigas e lajes são definidos.',
-    progress: 40
+    materials: ['Lajes Protendidas', 'Pilares de Alta Resistência', 'Fôrmas Metálicas'],
+    description: 'Fase final da estrutura. Estamos no 18º pavimento com ciclo de 7 dias por laje.',
+    progress: 92,
+    active: true
   },
   'Alvenaria': {
-    materials: ['Blocos Cerâmicos', 'Argamassa', 'Eletrodutos Corrugados', 'Tubulação PVC'],
-    description: 'Fechamento de paredes e infraestrutura básica de elétrica e hidráulica.',
-    progress: 70
+    materials: ['Blocos Acústicos', 'Argamassa Industrializada', 'Tubulação em PEX'],
+    description: 'Início dos fechamentos periféricos e infraestrutura de prumadas hidráulicas.',
+    progress: 35,
+    active: false
   },
   'Acabamento': {
-    materials: ['Porcelanato', 'Gesso Acartonado', 'Tintas Acrílicas', 'Louças e Metais'],
-    description: 'Fase final de refino. Instalação de revestimentos, pintura e vidros.',
-    progress: 95
+    materials: ['Porcelanato 120x120', 'Pintura Epóxi', 'Bancadas em Quartzo'],
+    description: 'Planejamento de revestimentos iniciado. Escolha de materiais premium validada.',
+    progress: 5,
+    active: false
   }
 };
 
@@ -36,11 +41,9 @@ export const ConstructionMode: React.FC<ConstructionModeProps> = ({ property }) 
   const [activePhase, setActivePhase] = useState<ConstructionPhaseType>('Estrutura');
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [cache, setCache] = useState<Record<string, string>>({});
 
   const handleGenerate = async () => {
-    setError(null);
     if (cache[activePhase]) {
         setGeneratedImage(cache[activePhase]);
         return;
@@ -52,12 +55,9 @@ export const ConstructionMode: React.FC<ConstructionModeProps> = ({ property }) 
       if (result) {
         setGeneratedImage(result);
         setCache(prev => ({ ...prev, [activePhase]: result }));
-      } else {
-        setError("Não foi possível gerar a simulação no momento.");
       }
-    } catch (err: any) {
-      console.error("Error generating construction view", err);
-      setError(`Erro de conexão: ${err.message || 'Verifique sua internet'}`);
+    } catch (err) {
+      console.error("Error", err);
     } finally {
       setIsGenerating(false);
     }
@@ -66,37 +66,43 @@ export const ConstructionMode: React.FC<ConstructionModeProps> = ({ property }) 
   const details = PHASE_DETAILS[activePhase];
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
-      <div className="bg-slate-900 text-white p-6">
-        <div className="flex items-center gap-3 mb-4">
-            <HardHat className="text-yellow-500" size={32} />
-            <div>
-                <h2 className="text-2xl font-bold">Modo Construção</h2>
-                <p className="text-slate-400 text-sm">Visualize a evolução da obra</p>
+    <div className="bg-white rounded-[40px] shadow-2xl border border-slate-100 overflow-hidden">
+      <div className="bg-slate-950 p-10 text-white">
+        <div className="flex items-center justify-between mb-10">
+            <div className="flex items-center gap-4">
+                <div className="bg-yellow-500 p-3 rounded-2xl shadow-lg shadow-yellow-500/20">
+                    <Activity className="text-slate-950" size={28} />
+                </div>
+                <div>
+                    <h2 className="text-2xl font-black tracking-tight">Status da Engenharia</h2>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Atualizado em Tempo Real</p>
+                </div>
+            </div>
+            <div className="hidden md:flex bg-slate-900 px-4 py-2 rounded-xl border border-slate-800 text-[10px] font-black text-yellow-500">
+               OBRA EM DIA
             </div>
         </div>
 
-        <div className="flex justify-between items-center relative mt-8 px-2">
-            <div className="absolute left-0 right-0 top-1/2 h-1 bg-slate-700 -z-0"></div>
-            {PHASES.map((phase, index) => {
+        <div className="flex justify-between items-center relative px-2">
+            <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-slate-800 -z-0"></div>
+            {PHASES.map((phase) => {
                 const isActive = phase === activePhase;
-                const isCompleted = PHASES.indexOf(phase) < PHASES.indexOf(activePhase);
+                const isCompleted = PHASE_DETAILS[phase].progress === 100;
                 return (
                     <button 
                         key={phase}
                         onClick={() => {
                             setActivePhase(phase);
                             setGeneratedImage(cache[phase] || null);
-                            setError(null);
                         }}
-                        className="relative z-10 flex flex-col items-center group"
+                        className="relative z-10 flex flex-col items-center"
                     >
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 transition-all duration-300 ${
-                            isActive ? 'bg-yellow-500 border-slate-900 scale-110 shadow-lg' : isCompleted ? 'bg-blue-600 border-slate-900' : 'bg-slate-700 border-slate-900'
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border-2 transition-all duration-300 ${
+                            isActive ? 'bg-yellow-500 border-yellow-500 scale-110 shadow-xl shadow-yellow-500/20' : isCompleted ? 'bg-blue-600 border-blue-600' : 'bg-slate-900 border-slate-800'
                         }`}>
-                            <span className="text-xs font-bold text-slate-900">{index + 1}</span>
+                            {isCompleted ? <CheckCircle2 size={24} className="text-white" /> : <span className={`text-sm font-black ${isActive ? 'text-slate-950' : 'text-slate-500'}`}>{PHASES.indexOf(phase) + 1}</span>}
                         </div>
-                        <span className={`mt-2 text-[10px] md:text-xs font-medium ${isActive ? 'text-yellow-500' : 'text-slate-400'}`}>
+                        <span className={`mt-3 text-[10px] font-black uppercase tracking-widest ${isActive ? 'text-yellow-500' : 'text-slate-500'}`}>
                             {phase}
                         </span>
                     </button>
@@ -105,78 +111,58 @@ export const ConstructionMode: React.FC<ConstructionModeProps> = ({ property }) 
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2">
-        <div className="bg-slate-100 p-6 flex flex-col items-center justify-center min-h-[400px] border-r border-slate-200">
-            <div className="relative w-full h-[350px] rounded-xl overflow-hidden bg-slate-200 shadow-inner group">
-                {generatedImage ? (
-                    <img src={generatedImage} alt={activePhase} className="w-full h-full object-cover animate-fade-in" />
-                ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 p-8 text-center">
-                        {isGenerating ? (
-                            <>
-                                <RefreshCw className="animate-spin mb-4 text-blue-600" size={40} />
-                                <span className="text-slate-600 font-medium">Renderizando etapa...</span>
-                            </>
-                        ) : error ? (
-                            <div className="text-red-500 px-4">
-                                <AlertTriangle className="mx-auto mb-2" size={32} />
-                                <p className="text-xs font-medium">{error}</p>
-                                <button onClick={handleGenerate} className="mt-4 text-blue-600 text-xs font-bold underline">Tentar novamente</button>
+      <div className="p-8">
+        <div className="grid lg:grid-cols-12 gap-10">
+            <div className="lg:col-span-7">
+                <div className="relative rounded-[32px] overflow-hidden bg-slate-100 h-[400px] shadow-inner group">
+                    {generatedImage ? (
+                        <img src={generatedImage} className="w-full h-full object-cover animate-fade-in" />
+                    ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-center p-12">
+                            {isGenerating ? (
+                                <RefreshCw className="animate-spin text-blue-600 mb-4" size={48} />
+                            ) : (
+                                <Pickaxe className="text-slate-200 mb-6" size={80} />
+                            )}
+                            <h4 className="text-lg font-bold text-slate-800">{isGenerating ? 'Processando dados...' : 'Projeção Visual'}</h4>
+                            <p className="text-slate-400 text-sm max-w-xs mx-auto">Visualize a evolução do canteiro de obras através do nosso modelo generativo.</p>
+                            {!isGenerating && (
+                                <button onClick={handleGenerate} className="mt-8 bg-slate-900 text-white px-8 py-3 rounded-2xl font-bold flex items-center gap-2 hover:bg-blue-600 transition-all">
+                                    GERAR SIMULAÇÃO <Zap size={18} />
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="lg:col-span-5 space-y-8">
+                <div>
+                    <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Relatório de Etapa</h3>
+                    <p className="text-slate-700 leading-relaxed font-medium">{details.description}</p>
+                    
+                    <div className="mt-8 space-y-2">
+                        <div className="flex justify-between text-xs font-black uppercase text-slate-400 tracking-widest">
+                            <span>Progresso Físico</span>
+                            <span className="text-slate-900">{details.progress}%</span>
+                        </div>
+                        <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-blue-600 transition-all duration-1000" style={{ width: `${details.progress}%` }}></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Logística e Materiais</h3>
+                    <div className="grid gap-3">
+                        {details.materials.map((m, i) => (
+                            <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-blue-200 transition-colors">
+                                <span className="text-sm font-bold text-slate-700">{m}</span>
+                                <CheckCircle2 size={18} className="text-blue-500" />
                             </div>
-                        ) : (
-                            <>
-                                <Pickaxe className="mb-4 opacity-50" size={48} />
-                                <p className="text-sm">Clique abaixo para visualizar esta fase da obra em IA</p>
-                            </>
-                        )}
-                    </div>
-                )}
-                <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-1 rounded-md text-[10px] uppercase font-bold backdrop-blur-md">
-                    PROJEÇÃO: {activePhase}
-                </div>
-            </div>
-
-            <button 
-                onClick={handleGenerate}
-                disabled={isGenerating}
-                className="mt-6 flex items-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-blue-700 transition-all shadow-lg disabled:opacity-50 active:scale-95"
-            >
-                {isGenerating ? 'Processando...' : 'Visualizar Fase'}
-                {!isGenerating && <RefreshCw size={18} />}
-            </button>
-        </div>
-
-        <div className="p-8 bg-white">
-            <div className="mb-8">
-                <h3 className="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2">
-                    <Ruler className="text-blue-600" />
-                    Detalhes Técnicos
-                </h3>
-                <p className="text-slate-600 leading-relaxed text-sm">{details.description}</p>
-                <div className="mt-4">
-                    <div className="flex justify-between text-xs text-slate-500 mb-1">
-                        <span>Progresso Estimado</span>
-                        <span>{details.progress}%</span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2">
-                        <div className="bg-blue-600 h-2 rounded-full transition-all duration-1000" style={{ width: `${details.progress}%` }}></div>
+                        ))}
                     </div>
                 </div>
-            </div>
-
-            <div>
-                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <Hammer className="text-blue-600" size={20} />
-                    Insumos e Materiais
-                </h3>
-                <ul className="grid grid-cols-1 gap-2">
-                    {details.materials.map((material, idx) => (
-                        <li key={idx} className="flex items-center text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 text-sm">
-                            <ArrowRight size={14} className="text-blue-400 mr-2" />
-                            {material}
-                        </li>
-                    ))}
-                </ul>
             </div>
         </div>
       </div>

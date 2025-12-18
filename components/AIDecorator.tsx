@@ -1,6 +1,7 @@
 
 import React, { useState, useRef } from 'react';
-import { Upload, Sparkles, RefreshCw, Download, AlertCircle } from 'lucide-react';
+// Import missing ArrowLeft from lucide-react
+import { Upload, Sparkles, RefreshCw, Download, AlertCircle, Camera, Trash2, ArrowLeft } from 'lucide-react';
 import { DesignStyle, GenerationState } from '../types';
 import { generateRoomDecoration } from '../services/geminiService';
 
@@ -12,84 +13,91 @@ export const AIDecorator: React.FC = () => {
   const [selectedStyle, setSelectedStyle] = useState<DesignStyle>('Moderno');
   const [instructions, setInstructions] = useState('');
   const [genState, setGenState] = useState<GenerationState>({ isGenerating: false });
+  const [sliderPos, setSliderPos] = useState(50);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       if (file.size > 3 * 1024 * 1024) {
-        setGenState({ isGenerating: false, error: "Imagem muito pesada. Tente uma foto de até 3MB." });
+        setGenState({ isGenerating: false, error: "Tamanho limite: 3MB. Por favor, redimensione a imagem." });
         return;
       }
       setSelectedFile(file);
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
+      setPreviewUrl(URL.createObjectURL(file));
       setGenState({ isGenerating: false, resultImage: undefined, error: undefined });
     }
   };
 
+  const reset = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setGenState({ isGenerating: false });
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleGenerate = async () => {
     if (!selectedFile) return;
-
     setGenState({ isGenerating: true, error: undefined });
 
     const reader = new FileReader();
     reader.readAsDataURL(selectedFile);
-    
     reader.onloadend = async () => {
-      const base64data = reader.result as string;
       try {
-        const resultUrl = await generateRoomDecoration(base64data, selectedStyle, instructions);
+        const resultUrl = await generateRoomDecoration(reader.result as string, selectedStyle, instructions);
         if (resultUrl) {
           setGenState({ isGenerating: false, resultImage: resultUrl });
         } else {
-          setGenState({ isGenerating: false, error: "A IA não conseguiu processar esta imagem. Tente outra foto." });
+          setGenState({ isGenerating: false, error: "Falha na geração. Tente outro ângulo ou iluminação." });
         }
       } catch (err: any) {
-        console.error("API Error Details:", err);
-        setGenState({ 
-          isGenerating: false, 
-          error: `Erro técnico: ${err.message || 'Falha na comunicação com os servidores da Google.'}` 
-        });
+        setGenState({ isGenerating: false, error: `Erro técnico: ${err.message}` });
       }
     };
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-8">
-      <div className="text-center mb-10">
-        <h2 className="text-3xl font-bold text-slate-800 mb-2">Decorador Virtual IA</h2>
-        <p className="text-slate-600">Envie uma foto e visualize o potencial do seu imóvel mobiliado.</p>
-      </div>
+    <div className="max-w-7xl mx-auto px-4">
+      <div className="grid lg:grid-cols-12 gap-12 items-start">
+        
+        {/* Sidebar Controls */}
+        <div className="lg:col-span-4 space-y-8 bg-white p-8 rounded-[32px] shadow-2xl shadow-slate-200 border border-slate-100">
+          <div>
+            <h2 className="text-3xl font-black text-slate-900 mb-2">Simulador IA</h2>
+            <p className="text-slate-500 text-sm">Visualize o potencial real do seu imóvel em segundos.</p>
+          </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-100 h-fit">
           <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">1. Foto do Ambiente</label>
+            {!previewUrl ? (
               <div 
                 onClick={() => fileInputRef.current?.click()}
-                className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-colors ${
-                  previewUrl ? 'border-blue-200 bg-blue-50' : 'border-slate-300 hover:border-blue-500 hover:bg-blue-50'
-                }`}
+                className="group border-4 border-dashed border-slate-100 rounded-3xl p-12 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all"
               >
-                <Upload className={`${previewUrl ? 'text-blue-500' : 'text-slate-400'} mb-2`} size={32} />
-                <span className="text-xs text-slate-500 font-medium text-center truncate w-full px-2">
-                  {selectedFile ? selectedFile.name : 'Clique para enviar foto'}
-                </span>
+                <div className="bg-blue-100 p-4 rounded-full text-blue-600 mb-4 group-hover:scale-110 transition-transform">
+                  <Camera size={32} />
+                </div>
+                <p className="font-bold text-slate-800">Enviar Foto</p>
+                <p className="text-xs text-slate-400 mt-1">Sala, quarto ou varanda (vazios)</p>
                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
               </div>
-            </div>
+            ) : (
+              <div className="relative rounded-2xl overflow-hidden h-40 group">
+                <img src={previewUrl} className="w-full h-full object-cover" />
+                <button onClick={reset} className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            )}
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">2. Estilo de Design</label>
+              <label className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3 block">Estilo Arquitetônico</label>
               <div className="grid grid-cols-2 gap-2">
                 {STYLES.map(style => (
                   <button
                     key={style}
                     onClick={() => setSelectedStyle(style)}
-                    className={`p-2 text-xs rounded-lg border transition-all ${
-                      selectedStyle === style ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'
+                    className={`py-3 px-4 rounded-xl text-xs font-bold transition-all border-2 ${
+                      selectedStyle === style ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-100 text-slate-600 hover:border-blue-200'
                     }`}
                   >
                     {style}
@@ -101,55 +109,77 @@ export const AIDecorator: React.FC = () => {
             <button
               onClick={handleGenerate}
               disabled={genState.isGenerating || !selectedFile}
-              className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 text-white font-semibold shadow-lg transition-all ${
-                !selectedFile || genState.isGenerating 
-                  ? 'bg-slate-400 cursor-not-allowed' 
-                  : 'bg-blue-600 hover:bg-blue-700 active:scale-95'
+              className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 text-white font-black text-lg shadow-xl transition-all ${
+                !selectedFile || genState.isGenerating ? 'bg-slate-300' : 'bg-blue-600 hover:bg-blue-700 active:scale-95'
               }`}
             >
-              {genState.isGenerating ? <RefreshCw className="animate-spin" size={20} /> : <Sparkles size={20} />}
-              {genState.isGenerating ? 'Redecorando...' : 'Gerar Nova Decoração'}
+              {genState.isGenerating ? <RefreshCw className="animate-spin" size={24} /> : <Sparkles size={24} />}
+              {genState.isGenerating ? 'PROCESSANDO...' : 'REDECORAR AMBIENTE'}
             </button>
           </div>
         </div>
 
-        <div className="lg:col-span-2 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[400px]">
-            <div className="relative rounded-2xl overflow-hidden bg-slate-200 border border-slate-300 shadow-sm">
-              <div className="absolute top-2 left-2 bg-black/70 text-white px-2 py-0.5 rounded text-[10px] z-10 font-bold uppercase tracking-wider">ANTES</div>
-              {previewUrl ? <img src={previewUrl} className="w-full h-full object-cover" /> : <div className="flex h-full items-center justify-center text-slate-400 italic text-sm">Aguardando foto...</div>}
-            </div>
+        {/* Comparison Display */}
+        <div className="lg:col-span-8 h-full min-h-[600px] flex flex-col">
+          {genState.resultImage ? (
+            <div className="relative flex-grow rounded-[40px] overflow-hidden shadow-2xl border-8 border-white group select-none">
+              <img src={genState.resultImage} className="absolute inset-0 w-full h-full object-cover" />
+              <div 
+                className="absolute inset-0 overflow-hidden" 
+                style={{ width: `${sliderPos}%` }}
+              >
+                <img src={previewUrl!} className="absolute top-0 left-0 w-[800px] md:w-full h-full object-cover max-w-none" />
+              </div>
+              
+              {/* Slider UI */}
+              <div 
+                className="absolute top-0 bottom-0 w-1 bg-white shadow-2xl cursor-ew-resize z-20 flex items-center justify-center"
+                style={{ left: `${sliderPos}%` }}
+              >
+                <div className="bg-white p-2 rounded-full shadow-xl border border-slate-200 -mx-4">
+                  <div className="flex gap-1 text-slate-400">
+                    <ArrowLeft size={14} />
+                    <ArrowLeft size={14} className="rotate-180" />
+                  </div>
+                </div>
+              </div>
+              
+              <input 
+                type="range" 
+                min="0" 
+                max="100" 
+                value={sliderPos} 
+                onChange={(e) => setSliderPos(parseInt(e.target.value))}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-30"
+              />
 
-            <div className="relative rounded-2xl overflow-hidden bg-slate-100 border border-slate-300 shadow-inner">
-               <div className="absolute top-2 left-2 bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] z-10 font-bold uppercase tracking-wider">DEPOIS (IA)</div>
-               {genState.resultImage ? (
-                 <>
-                   <img src={genState.resultImage} className="w-full h-full object-cover animate-fade-in" />
-                   <a href={genState.resultImage} download="imobar-decoracao.png" className="absolute bottom-4 right-4 bg-white/90 p-3 rounded-full shadow-xl hover:bg-white hover:scale-110 transition-all text-blue-600">
-                     <Download size={20} />
-                   </a>
-                 </>
-               ) : (
-                 <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 p-8 text-center bg-slate-50/50">
-                   {genState.isGenerating ? (
-                     <div className="flex flex-col items-center">
-                       <RefreshCw className="animate-spin mb-4 text-blue-600" size={40} />
-                       <p className="text-slate-600 font-medium text-sm">Nossa IA está mobiliando seu imóvel...</p>
-                     </div>
-                   ) : <Sparkles className="opacity-20 mb-2" size={48} />}
-                   {!genState.isGenerating && <span className="text-xs max-w-[200px]">Selecione uma foto e estilo para visualizar a transformação</span>}
-                 </div>
-               )}
+              <div className="absolute bottom-8 left-8 bg-black/60 backdrop-blur-md text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest pointer-events-none">
+                Arraste para comparar <span className="ml-2 text-blue-400">Antes vs Depois</span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex-grow bg-slate-100 rounded-[40px] border-4 border-dashed border-slate-200 flex flex-col items-center justify-center p-12 text-center">
+              {genState.isGenerating ? (
+                <div className="space-y-6">
+                  <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center mx-auto shadow-2xl shadow-blue-200">
+                    <RefreshCw className="text-white animate-spin" size={48} />
+                  </div>
+                  <h3 className="text-2xl font-black text-slate-900">Gerando visualização...</h3>
+                  <p className="text-slate-500">Isso pode levar até 15 segundos dependendo da complexidade do ambiente.</p>
+                </div>
+              ) : (
+                <div className="opacity-30">
+                  <Sparkles size={100} className="mb-6 mx-auto text-slate-400" />
+                  <p className="text-xl font-bold">Aguardando envio de imagem</p>
+                </div>
+              )}
+            </div>
+          )}
 
           {genState.error && (
-            <div className="bg-red-50 p-4 rounded-xl border border-red-100 flex items-start gap-3 animate-fade-in-up">
-              <AlertCircle className="text-red-600 flex-shrink-0" size={24} />
-              <div>
-                <h3 className="text-sm font-bold text-red-900">Aviso:</h3>
-                <p className="text-red-700 text-xs mt-0.5">{genState.error}</p>
-              </div>
+            <div className="mt-6 bg-red-50 text-red-600 p-6 rounded-3xl border border-red-100 flex items-center gap-4 animate-fade-in-up">
+              <AlertCircle size={24} />
+              <p className="font-bold">{genState.error}</p>
             </div>
           )}
         </div>
