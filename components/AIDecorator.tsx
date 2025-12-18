@@ -16,9 +16,8 @@ export const AIDecorator: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      // Limitar tamanho do arquivo para evitar estouro de payload da API (máximo ~4MB recomendado)
-      if (file.size > 5 * 1024 * 1024) {
-        setGenState({ isGenerating: false, error: "Imagem muito grande. Escolha uma foto de até 5MB." });
+      if (file.size > 4 * 1024 * 1024) {
+        setGenState({ isGenerating: false, error: "Imagem muito grande. Use uma foto de até 4MB para melhor performance." });
         return;
       }
       setSelectedFile(file);
@@ -43,19 +42,16 @@ export const AIDecorator: React.FC = () => {
         if (resultUrl) {
           setGenState({ isGenerating: false, resultImage: resultUrl });
         } else {
-          setGenState({ isGenerating: false, error: "A IA não conseguiu gerar a decoração para esta imagem. Tente outro ângulo ou iluminação." });
+          setGenState({ isGenerating: false, error: "A IA não conseguiu gerar a decoração. Tente outra imagem." });
         }
       } catch (err: any) {
-        console.error("Decoration catch:", err);
+        console.error("API Error Details:", err);
+        // Exibe o erro real para diagnóstico
         setGenState({ 
           isGenerating: false, 
-          error: "Erro na conexão: " + (err.message || "Verifique sua internet ou tente novamente mais tarde.")
+          error: `Erro técnico: ${err.message || 'Falha na comunicação com a IA'}`
         });
       }
-    };
-
-    reader.onerror = () => {
-      setGenState({ isGenerating: false, error: "Erro ao ler o arquivo de imagem." });
     };
   };
 
@@ -63,16 +59,12 @@ export const AIDecorator: React.FC = () => {
     <div className="max-w-6xl mx-auto p-4 md:p-8">
       <div className="text-center mb-10">
         <h2 className="text-3xl font-bold text-slate-800 mb-2">Decorador Virtual IA</h2>
-        <p className="text-slate-600">Visualize o potencial do seu imóvel. Envie uma foto e deixe nossa IA redecorar o ambiente.</p>
+        <p className="text-slate-600">Envie uma foto e visualize o potencial do seu imóvel.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Controls Sidebar */}
         <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-100 h-fit">
           <div className="space-y-6">
-            
-            {/* Upload */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">1. Foto do Ambiente</label>
               <div 
@@ -82,31 +74,22 @@ export const AIDecorator: React.FC = () => {
                 }`}
               >
                 <Upload className={`${previewUrl ? 'text-blue-500' : 'text-slate-400'} mb-2`} size={32} />
-                <span className="text-sm text-slate-500 font-medium text-center">
+                <span className="text-xs text-slate-500 font-medium text-center truncate w-full px-2">
                   {selectedFile ? selectedFile.name : 'Clique para enviar foto'}
                 </span>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  className="hidden" 
-                  accept="image/*"
-                  onChange={handleFileChange}
-                />
+                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
               </div>
             </div>
 
-            {/* Style Selector */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">2. Escolha o Estilo</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">2. Estilo de Design</label>
               <div className="grid grid-cols-2 gap-2">
                 {STYLES.map(style => (
                   <button
                     key={style}
                     onClick={() => setSelectedStyle(style)}
-                    className={`p-2 text-sm rounded-lg border transition-all ${
-                      selectedStyle === style 
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
-                        : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'
+                    className={`p-2 text-xs rounded-lg border transition-all ${
+                      selectedStyle === style ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'
                     }`}
                   >
                     {style}
@@ -115,106 +98,56 @@ export const AIDecorator: React.FC = () => {
               </div>
             </div>
 
-            {/* Extra Instructions */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">3. Detalhes (Opcional)</label>
-              <textarea
-                value={instructions}
-                onChange={(e) => setInstructions(e.target.value)}
-                placeholder="Ex: Piso de madeira clara, iluminação quente, sofá moderno..."
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none h-24 transition-all"
-              />
-            </div>
-
-            {/* Generate Button */}
             <button
               onClick={handleGenerate}
               disabled={!selectedFile || genState.isGenerating}
               className={`w-full py-4 rounded-xl flex items-center justify-center gap-2 text-white font-semibold shadow-lg transition-all ${
-                !selectedFile || genState.isGenerating 
-                  ? 'bg-slate-400 cursor-not-allowed' 
-                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-xl hover:scale-[1.02] active:scale-95'
+                !selectedFile || genState.isGenerating ? 'bg-slate-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 active:scale-95'
               }`}
             >
-              {genState.isGenerating ? (
-                <>
-                  <RefreshCw className="animate-spin" size={20} />
-                  Processando...
-                </>
-              ) : (
-                <>
-                  <Sparkles size={20} />
-                  Gerar Decoração
-                </>
-              )}
+              {genState.isGenerating ? <RefreshCw className="animate-spin" size={20} /> : <Sparkles size={20} />}
+              {genState.isGenerating ? 'Redecorando...' : 'Gerar Nova Decoração'}
             </button>
           </div>
         </div>
 
-        {/* Preview Area */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Comparison View */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 min-h-[400px]">
-            
-            {/* Original */}
-            <div className="relative rounded-2xl overflow-hidden bg-slate-200 border border-slate-300 group">
-              <div className="absolute top-4 left-4 bg-black/60 text-white px-3 py-1 rounded-full text-[10px] font-bold backdrop-blur-sm z-10">ORIGINAL</div>
-              {previewUrl ? (
-                <img src={previewUrl} alt="Original" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-slate-400 flex-col py-20">
-                  <ImageIcon size={48} className="mb-2 opacity-50" />
-                  <span className="text-sm">Envie uma foto à esquerda</span>
-                </div>
-              )}
+            <div className="relative rounded-2xl overflow-hidden bg-slate-200 border border-slate-300 shadow-sm">
+              <div className="absolute top-2 left-2 bg-black/70 text-white px-2 py-0.5 rounded text-[10px] z-10 font-bold uppercase tracking-wider">ANTES</div>
+              {previewUrl ? <img src={previewUrl} className="w-full h-full object-cover" /> : <div className="flex h-full items-center justify-center text-slate-400 italic text-sm">Aguardando foto...</div>}
             </div>
 
-            {/* Result */}
-            <div className="relative rounded-2xl overflow-hidden bg-slate-100 border border-slate-300 shadow-inner group">
-               <div className={`absolute top-4 left-4 ${genState.isGenerating ? 'bg-amber-500' : 'bg-blue-600'} text-white px-3 py-1 rounded-full text-[10px] font-bold backdrop-blur-sm z-10 transition-colors`}>
-                 {genState.isGenerating ? 'REDECORANDO...' : 'RESULTADO IA'}
-               </div>
-               
+            <div className="relative rounded-2xl overflow-hidden bg-slate-100 border border-slate-300 shadow-inner">
+               <div className="absolute top-2 left-2 bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] z-10 font-bold uppercase tracking-wider">DEPOIS (IA)</div>
                {genState.resultImage ? (
                  <>
-                   <img src={genState.resultImage} alt="Generated" className="w-full h-full object-cover animate-fade-in" />
-                   <a 
-                      href={genState.resultImage} 
-                      download="minha-decoracao-imobar.png"
-                      className="absolute bottom-4 right-4 bg-white/90 text-slate-800 p-3 rounded-full hover:bg-white shadow-xl transition-all hover:scale-110 active:scale-90"
-                      title="Baixar imagem"
-                   >
+                   <img src={genState.resultImage} className="w-full h-full object-cover animate-fade-in" />
+                   <a href={genState.resultImage} download="imobar-decoracao.png" className="absolute bottom-4 right-4 bg-white/90 p-3 rounded-full shadow-xl hover:bg-white hover:scale-110 transition-all text-blue-600">
                      <Download size={20} />
                    </a>
                  </>
                ) : (
-                 <div className="w-full h-full flex items-center justify-center text-slate-400 flex-col bg-slate-50 py-20">
+                 <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 p-8 text-center bg-slate-50/50">
                    {genState.isGenerating ? (
-                      <div className="flex flex-col items-center">
-                        <div className="relative w-16 h-16 mb-4">
-                           <div className="absolute inset-0 border-4 border-blue-100 rounded-full"></div>
-                           <div className="absolute inset-0 border-4 border-t-blue-600 rounded-full animate-spin"></div>
-                        </div>
-                        <span className="text-sm font-medium text-slate-600 animate-pulse">Transformando o ambiente...</span>
-                        <p className="text-[10px] text-slate-400 mt-2">Isso pode levar até 30 segundos</p>
-                      </div>
-                   ) : (
-                     <>
-                        <Sparkles size={48} className="mb-2 opacity-30 text-blue-600" />
-                        <span className="text-sm text-center px-6">Escolha um estilo e clique em Gerar</span>
-                     </>
-                   )}
+                     <div className="flex flex-col items-center">
+                       <RefreshCw className="animate-spin mb-4 text-blue-600" size={40} />
+                       <p className="text-slate-600 font-medium text-sm">Nossa IA está mobiliando seu imóvel...</p>
+                     </div>
+                   ) : <Sparkles className="opacity-20 mb-2" size={48} />}
+                   {!genState.isGenerating && <span className="text-xs max-w-[200px]">Selecione uma foto e estilo para visualizar a transformação</span>}
                  </div>
                )}
             </div>
-
           </div>
 
           {genState.error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-100 flex items-center animate-fade-in-up">
-              <AlertCircle className="mr-3 flex-shrink-0" size={20} />
-              <div>
-                <span className="font-bold">Atenção:</span> {genState.error}
+            <div className="bg-red-50 text-red-700 p-4 rounded-xl text-sm border border-red-100 flex items-start gap-3 animate-fade-in-up">
+              <AlertCircle className="flex-shrink-0 mt-0.5" size={20} />
+              <div className="flex flex-col">
+                <span className="font-bold">Ocorreu um erro:</span>
+                <span className="opacity-90">{genState.error}</span>
+                <button onClick={handleGenerate} className="text-blue-600 font-semibold mt-2 hover:underline w-fit">Tentar novamente</button>
               </div>
             </div>
           )}

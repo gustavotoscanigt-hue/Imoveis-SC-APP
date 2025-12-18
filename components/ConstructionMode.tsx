@@ -53,11 +53,11 @@ export const ConstructionMode: React.FC<ConstructionModeProps> = ({ property }) 
         setGeneratedImage(result);
         setCache(prev => ({ ...prev, [activePhase]: result }));
       } else {
-        setError("Não foi possível gerar a imagem no momento. Tente novamente.");
+        setError("Não foi possível gerar a simulação no momento.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error generating construction view", err);
-      setError("Erro ao conectar com a IA. Verifique se a chave API está configurada.");
+      setError(`Erro de conexão: ${err.message || 'Verifique sua internet'}`);
     } finally {
       setIsGenerating(false);
     }
@@ -118,29 +118,30 @@ export const ConstructionMode: React.FC<ConstructionModeProps> = ({ property }) 
                                 <span className="text-slate-600 font-medium">Renderizando etapa...</span>
                             </>
                         ) : error ? (
-                            <div className="text-red-500">
+                            <div className="text-red-500 px-4">
                                 <AlertTriangle className="mx-auto mb-2" size={32} />
-                                <p className="text-sm">{error}</p>
+                                <p className="text-xs font-medium">{error}</p>
+                                <button onClick={handleGenerate} className="mt-4 text-blue-600 text-xs font-bold underline">Tentar novamente</button>
                             </div>
                         ) : (
                             <>
                                 <Pickaxe className="mb-4 opacity-50" size={48} />
-                                <p className="text-sm">Clique no botão abaixo para simular esta etapa.</p>
+                                <p className="text-sm">Clique abaixo para visualizar esta fase da obra em IA</p>
                             </>
                         )}
                     </div>
                 )}
                 <div className="absolute top-4 left-4 bg-black/70 text-white px-3 py-1 rounded-md text-[10px] uppercase font-bold backdrop-blur-md">
-                    Status: {activePhase}
+                    PROJEÇÃO: {activePhase}
                 </div>
             </div>
 
             <button 
                 onClick={handleGenerate}
                 disabled={isGenerating}
-                className="mt-6 flex items-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-blue-700 transition-all shadow-lg disabled:opacity-50"
+                className="mt-6 flex items-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-blue-700 transition-all shadow-lg disabled:opacity-50 active:scale-95"
             >
-                {isGenerating ? 'Processando...' : 'Visualizar Fase (IA)'}
+                {isGenerating ? 'Processando...' : 'Visualizar Fase'}
                 {!isGenerating && <RefreshCw size={18} />}
             </button>
         </div>
@@ -154,7 +155,7 @@ export const ConstructionMode: React.FC<ConstructionModeProps> = ({ property }) 
                 <p className="text-slate-600 leading-relaxed text-sm">{details.description}</p>
                 <div className="mt-4">
                     <div className="flex justify-between text-xs text-slate-500 mb-1">
-                        <span>Progresso Geral</span>
+                        <span>Progresso Estimado</span>
                         <span>{details.progress}%</span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-full h-2">
@@ -166,9 +167,9 @@ export const ConstructionMode: React.FC<ConstructionModeProps> = ({ property }) 
             <div>
                 <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                     <Hammer className="text-blue-600" size={20} />
-                    Materiais
+                    Insumos e Materiais
                 </h3>
-                <ul className="space-y-3">
+                <ul className="grid grid-cols-1 gap-2">
                     {details.materials.map((material, idx) => (
                         <li key={idx} className="flex items-center text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-100 text-sm">
                             <ArrowRight size={14} className="text-blue-400 mr-2" />
