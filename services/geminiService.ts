@@ -9,12 +9,14 @@ Seu objetivo é agendar visitas e responder dúvidas técnicas sobre os imóveis
 Responda sempre em Português do Brasil de forma concisa.
 `;
 
-export const sendMessageToAgent = async (history: { role: string, parts: { text: string }[] }[], newMessage: string): Promise<string> => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) throw new Error("API key is missing. Please select an API key.");
+const getAiClient = () => {
+  // Confia que o ambiente (Vercel/AI Studio) proveu a chave.
+  return new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+};
 
+export const sendMessageToAgent = async (history: { role: string, parts: { text: string }[] }[], newMessage: string): Promise<string> => {
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = getAiClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: [...history, { role: 'user', parts: [{ text: newMessage }] }],
@@ -31,11 +33,8 @@ export const sendMessageToAgent = async (history: { role: string, parts: { text:
 };
 
 export const generateRoomDecoration = async (base64Image: string, style: DesignStyle, instructions: string): Promise<string | undefined> => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) throw new Error("API key is missing. Please select an API key.");
-
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = getAiClient();
     
     const matches = base64Image.match(/^data:([^;]+);base64,(.+)$/);
     if (!matches || matches.length !== 3) {
@@ -78,11 +77,8 @@ export const generateRoomDecoration = async (base64Image: string, style: DesignS
 };
 
 export const generateConstructionPhase = async (imageUrl: string, phase: ConstructionPhaseType, propertyDescription: string): Promise<string | undefined> => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) throw new Error("API key is missing. Please select an API key.");
-
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = getAiClient();
     let imagePart = null;
     
     try {

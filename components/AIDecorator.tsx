@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { Upload, Sparkles, RefreshCw, Download, AlertCircle, Key } from 'lucide-react';
+import { Upload, Sparkles, RefreshCw, Download, AlertCircle } from 'lucide-react';
 import { DesignStyle, GenerationState } from '../types';
 import { generateRoomDecoration } from '../services/geminiService';
 
@@ -28,13 +28,6 @@ export const AIDecorator: React.FC = () => {
     }
   };
 
-  const handleConnectKey = async () => {
-    if (window.aistudio) {
-      await window.aistudio.openSelectKey();
-      window.location.reload();
-    }
-  };
-
   const handleGenerate = async () => {
     if (!selectedFile) return;
 
@@ -50,17 +43,13 @@ export const AIDecorator: React.FC = () => {
         if (resultUrl) {
           setGenState({ isGenerating: false, resultImage: resultUrl });
         } else {
-          setGenState({ isGenerating: false, error: "A IA não retornou imagem. Tente outra foto." });
+          setGenState({ isGenerating: false, error: "A IA não conseguiu processar esta imagem. Tente outra foto." });
         }
       } catch (err: any) {
         console.error("API Error Details:", err);
-        const isKeyMissing = err.message?.toLowerCase().includes("api key is missing");
-        
         setGenState({ 
           isGenerating: false, 
-          error: isKeyMissing 
-            ? "Você precisa conectar sua API Key do Google AI Studio para usar este recurso." 
-            : `Erro: ${err.message}` 
+          error: `Erro técnico: ${err.message || 'Falha na comunicação com os servidores da Google.'}` 
         });
       }
     };
@@ -155,24 +144,12 @@ export const AIDecorator: React.FC = () => {
           </div>
 
           {genState.error && (
-            <div className="bg-white p-6 rounded-2xl shadow-lg border-2 border-red-100 flex flex-col items-center text-center gap-4 animate-fade-in-up">
-              <div className="bg-red-50 p-3 rounded-full text-red-600">
-                <AlertCircle size={32} />
-              </div>
+            <div className="bg-red-50 p-4 rounded-xl border border-red-100 flex items-start gap-3 animate-fade-in-up">
+              <AlertCircle className="text-red-600 flex-shrink-0" size={24} />
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Problema na Conexão com IA</h3>
-                <p className="text-slate-600 text-sm mt-1">{genState.error}</p>
+                <h3 className="text-sm font-bold text-red-900">Aviso:</h3>
+                <p className="text-red-700 text-xs mt-0.5">{genState.error}</p>
               </div>
-              
-              {genState.error.includes("API Key") && (
-                <button 
-                  onClick={handleConnectKey}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-full font-bold flex items-center gap-2 hover:bg-blue-700 transition-all shadow-md shadow-blue-200"
-                >
-                  <Key size={18} />
-                  CONECTAR API KEY AGORA
-                </button>
-              )}
             </div>
           )}
         </div>
