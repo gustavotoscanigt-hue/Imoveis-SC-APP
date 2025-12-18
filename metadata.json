@@ -1,0 +1,8 @@
+{
+  "name": "ImobAR - Realidade Aumentada Imobiliária",
+  "description": "Aplicativo para construtoras com tour virtual, simulação de decoração via IA e assistente virtual inteligente.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
