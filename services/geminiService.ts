@@ -32,7 +32,7 @@ export const generateRoomDecoration = async (base64Image: string, style: DesignS
     
     const matches = base64Image.match(/^data:([^;]+);base64,(.+)$/);
     if (!matches || matches.length !== 3) {
-      throw new Error("Formato de imagem inválido ou arquivo muito grande.");
+      throw new Error("Formato de imagem inválido.");
     }
     const mimeType = matches[1];
     const data = matches[2];
@@ -40,8 +40,8 @@ export const generateRoomDecoration = async (base64Image: string, style: DesignS
     const prompt = `Atue como um arquiteto de interiores de alto padrão. 
     Redecore este ambiente fielmente no estilo: ${style}. 
     Instruções extras: ${instructions}.
-    Mantenha a arquitetura básica (paredes, janelas), mas substitua móveis, cores e iluminação. 
-    O resultado final deve ser uma fotografia realista e luxuosa.`;
+    Mantenha a arquitetura original (paredes, janelas), mas mude móveis e cores. 
+    Resultado fotorealista.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image', 
@@ -55,7 +55,7 @@ export const generateRoomDecoration = async (base64Image: string, style: DesignS
 
     const candidate = response.candidates?.[0];
     if (!candidate || !candidate.content || !candidate.content.parts) {
-      throw new Error("A IA não retornou conteúdo válido. Tente novamente.");
+      return undefined;
     }
 
     for (const part of candidate.content.parts) {
@@ -63,12 +63,6 @@ export const generateRoomDecoration = async (base64Image: string, style: DesignS
         return `data:image/png;base64,${part.inlineData.data}`;
       }
     }
-    
-    // Se não houver parte de imagem, mas houver texto, pode ser uma recusa ou erro da IA
-    if (candidate.content.parts[0]?.text) {
-      throw new Error(candidate.content.parts[0].text);
-    }
-
     return undefined;
   } catch (error: any) {
     console.error("Gemini Decoration Error:", error);
@@ -94,10 +88,10 @@ export const generateConstructionPhase = async (imageUrl: string, phase: Constru
         imagePart = { inlineData: { mimeType: matches[1], data: matches[2] } };
       }
     } catch (e) {
-      console.warn("Usando apenas prompt de texto para fase de obra.");
+      console.warn("Fallback de imagem");
     }
 
-    const prompt = `Gere uma foto real de um canteiro de obras de um edifício na fase de ${phase}. Contexto do projeto: ${propertyDescription}. Detalhes técnicos visíveis de engenharia civil.`;
+    const prompt = `Gere uma foto real de um canteiro de obras modernos na fase de ${phase}. Projeto: ${propertyDescription}.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',

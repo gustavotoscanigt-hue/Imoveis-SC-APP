@@ -1,4 +1,4 @@
-const CACHE_NAME = 'imobar-v3';
+const CACHE_NAME = 'imobar-cache-v1';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -38,7 +38,6 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
-
   event.respondWith(
     caches.match(event.request).then((response) => {
       return response || fetch(event.request);
