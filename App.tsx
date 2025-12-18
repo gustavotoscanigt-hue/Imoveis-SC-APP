@@ -1,11 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { PropertyCard } from './components/PropertyCard';
 import { ChatAgent } from './components/ChatAgent';
 import { AIDecorator } from './components/AIDecorator';
 import { ConstructionMode } from './components/ConstructionMode';
 import { Property } from './types';
-import { Home, Box, Phone, Menu, X, ArrowLeft, HardHat, Share2, Check, Smartphone, Key, ExternalLink } from 'lucide-react';
+import { Home, Box, Phone, Menu, X, ArrowLeft, HardHat, Share2, Check } from 'lucide-react';
 
 // Mock Data
 const MOCK_PROPERTIES: Property[] = [
@@ -50,9 +50,7 @@ const MOCK_PROPERTIES: Property[] = [
   }
 ];
 
-// Removed redundant declare global for AIStudio to fix duplicate identifier errors at lines 55-56
-
-type View = 'home' | 'property-detail' | 'ar-tool' | 'setup';
+type View = 'home' | 'property-detail' | 'ar-tool';
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('home');
@@ -60,74 +58,18 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showConstructionMode, setShowConstructionMode] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
-  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    const checkApiKey = async () => {
-      // 1. Verifica se a chave já está injetada pelo ambiente (process.env)
-      if (process.env.API_KEY && process.env.API_KEY !== 'undefined' && process.env.API_KEY.length > 5) {
-        setHasApiKey(true);
-        setCurrentView('home');
-        return;
-      }
-
-      // 2. Se estiver no AI Studio, verifica se o usuário já selecionou uma chave
-      // Using type cast for window as any to access environmental global aistudio safely without duplicate identifier conflicts
-      if ((window as any).aistudio) {
-        try {
-          const selected = await (window as any).aistudio.hasSelectedApiKey();
-          setHasApiKey(selected);
-          if (!selected) {
-            setCurrentView('setup');
-          } else {
-            setCurrentView('home');
-          }
-        } catch (e) {
-          console.error("Erro ao verificar chave no AI Studio:", e);
-          setHasApiKey(false);
-          setCurrentView('setup');
-        }
-      } else {
-        // 3. Caso contrário (local/produção sem process.env), assume que precisa de setup se a chave for obrigatória
-        setHasApiKey(false);
-        setCurrentView('setup');
-      }
-    };
-
-    checkApiKey();
-  }, []);
-
-  const handleSelectKey = async () => {
-    // Using type cast for window as any to access environmental global aistudio safely without duplicate identifier conflicts
-    if ((window as any).aistudio) {
-      try {
-        await (window as any).aistudio.openSelectKey();
-        // Conforme as diretrizes, assumimos sucesso imediato para evitar race conditions
-        setHasApiKey(true);
-        setCurrentView('home');
-      } catch (err) {
-        console.error("Erro ao abrir seletor de chave:", err);
-      }
-    } else {
-      alert("Para usar as funções de IA, uma API Key deve estar configurada no ambiente.");
-    }
-  };
 
   const handlePropertySelect = (property: Property) => {
     setSelectedProperty(property);
     setCurrentView('property-detail');
     setShowConstructionMode(false);
-    window.scrollTo(0,0);
+    window.scrollTo(0, 0);
   };
 
   const navTo = (view: View) => {
-    if (!hasApiKey && view !== 'setup') {
-      setCurrentView('setup');
-      return;
-    }
     setCurrentView(view);
     setIsMobileMenuOpen(false);
-    window.scrollTo(0,0);
+    window.scrollTo(0, 0);
   };
 
   const handleCopyLink = () => {
@@ -135,47 +77,6 @@ function App() {
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
   };
-
-  if (currentView === 'setup') {
-    return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden animate-fade-in-up">
-          <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 text-white text-center">
-            <div className="bg-white/20 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 backdrop-blur-md">
-              <Key size={40} />
-            </div>
-            <h1 className="text-2xl font-bold mb-2">Configuração Necessária</h1>
-            <p className="text-blue-100 opacity-90">Para habilitar o decorador IA e o assistente virtual, selecione sua chave de API do Gemini.</p>
-          </div>
-          <div className="p-8 space-y-6">
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-              <p className="text-sm text-slate-600 mb-4 leading-relaxed">
-                Este aplicativo utiliza os modelos <strong>Gemini 3</strong> e <strong>2.5 Flash</strong> para gerar decorações fotorealistas e conversas inteligentes.
-              </p>
-              <a 
-                href="https://ai.google.dev/gemini-api/docs/billing" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-blue-600 text-xs font-bold flex items-center gap-1 hover:underline"
-              >
-                Saiba mais sobre faturamento <ExternalLink size={12} />
-              </a>
-            </div>
-            <button 
-              onClick={handleSelectKey}
-              className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-3"
-            >
-              <Key size={20} />
-              Selecionar Chave de API
-            </button>
-            <p className="text-[10px] text-center text-slate-400">
-              Necessário projeto com faturamento ativado no Google Cloud.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col relative">
