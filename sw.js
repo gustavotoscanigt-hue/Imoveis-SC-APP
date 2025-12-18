@@ -1,13 +1,13 @@
-// Simple passthrough service worker
-self.addEventListener('install', () => {
+// SW básico para permitir instalação PWA
+self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(clients.claim());
+  event.waitUntil(self.clients.claim());
 });
 
 self.addEventListener('fetch', (event) => {
-  // Always fetch from network to avoid "Internal Error" or white screens in development
-  event.respondWith(fetch(event.request));
+  // Apenas repassa as requisições, necessário para o navegador considerar "instalável"
+  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
 });

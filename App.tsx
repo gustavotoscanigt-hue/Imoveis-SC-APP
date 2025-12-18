@@ -4,7 +4,7 @@ import { ChatAgent } from './components/ChatAgent';
 import { AIDecorator } from './components/AIDecorator';
 import { ConstructionMode } from './components/ConstructionMode';
 import { Property } from './types';
-import { Home, Box, Phone, Menu, X, ArrowLeft, HardHat, Share2, Check, Smartphone, Download } from 'lucide-react';
+import { Home, Box, Phone, Menu, X, ArrowLeft, HardHat, Share2, Check, Smartphone, Download, Plus } from 'lucide-react';
 
 // Mock Data
 const MOCK_PROPERTIES: Property[] = [
@@ -57,17 +57,49 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showConstructionMode, setShowConstructionMode] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
 
   useEffect(() => {
     // Check if it's mobile and not already installed
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     
-    if (isMobile && !isStandalone) {
-      setShowInstallBanner(true);
+    // Logic for Android install prompt
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      if (!isStandalone) setShowInstallBanner(true);
+    });
+
+    // Fallback for iOS and other cases
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile && !isStandalone && !deferredPrompt) {
+      // Small delay to check if beforeinstallprompt fired
+      setTimeout(() => {
+         setShowInstallBanner(true);
+      }, 2000);
     }
-  }, []);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', () => {});
+    };
+  }, [deferredPrompt]);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+      }
+      setDeferredPrompt(null);
+      setShowInstallBanner(false);
+    } else {
+      // iOS fallback instructions
+      alert("No iPhone/iPad:\n1. Toque no botão 'Compartilhar' (ícone de quadrado com seta)\n2. Role para baixo e selecione 'Adicionar à Tela de Início'\n3. Toque em 'Adicionar'");
+      setShowInstallBanner(false);
+    }
+  };
 
   const handlePropertySelect = (property: Property) => {
     setSelectedProperty(property);
@@ -92,24 +124,28 @@ function App() {
     <div className="min-h-screen flex flex-col relative">
       {/* Install App Banner (Mobile Only) */}
       {showInstallBanner && (
-        <div className="bg-blue-600 text-white p-3 flex justify-between items-center animate-fade-in text-sm">
-          <div className="flex items-center gap-2">
-            <Smartphone size={18} />
-            <span>Instale como Aplicativo para uma melhor experiência</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => {
-                alert("No Android: Toque nos 3 pontinhos e 'Instalar Aplicativo'.\nNo iOS: Toque em 'Compartilhar' e 'Adicionar à Tela de Início'.");
-                setShowInstallBanner(false);
-              }}
-              className="bg-white text-blue-600 px-3 py-1 rounded-full font-bold text-xs flex items-center gap-1"
-            >
-              <Download size={14} />
-              Como?
+        <div className="bg-blue-600 text-white p-4 flex flex-col gap-3 animate-fade-in text-sm sticky top-0 z-[60] shadow-xl border-b border-blue-500">
+          <div className="flex justify-between items-start">
+            <div className="flex gap-3">
+              <div className="bg-white p-2 rounded-xl shadow-inner">
+                 <Smartphone className="text-blue-600" size={24} />
+              </div>
+              <div>
+                <p className="font-bold text-base">Instalar ImobAR</p>
+                <p className="text-blue-100 opacity-90">Acesse tours 3D e decoração IA com um toque.</p>
+              </div>
+            </div>
+            <button onClick={() => setShowInstallBanner(false)} className="p-1 hover:bg-blue-500 rounded-full">
+              <X size={20} />
             </button>
-            <button onClick={() => setShowInstallBanner(false)}><X size={18} /></button>
           </div>
+          <button 
+            onClick={handleInstallClick}
+            className="w-full bg-white text-blue-600 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform"
+          >
+            <Plus size={18} />
+            Instalar Aplicativo
+          </button>
         </div>
       )}
 

@@ -1,8 +1,14 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { DesignStyle, ConstructionPhaseType } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Função para obter a instância do AI de forma segura
+const getAI = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API Key não configurada no ambiente.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
 
 const CHAT_SYSTEM_INSTRUCTION = `
 Você é um consultor imobiliário sênior da 'ImobAR Construtora'.
@@ -13,6 +19,7 @@ Responda sempre em Português do Brasil de forma concisa.
 
 export const sendMessageToAgent = async (history: { role: string, parts: { text: string }[] }[], newMessage: string): Promise<string> => {
   try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: [...history, { role: 'user', parts: [{ text: newMessage }] }],
@@ -30,6 +37,7 @@ export const sendMessageToAgent = async (history: { role: string, parts: { text:
 
 export const generateRoomDecoration = async (base64Image: string, style: DesignStyle, instructions: string): Promise<string | undefined> => {
   try {
+    const ai = getAI();
     const cleanBase64 = base64Image.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
 
     const prompt = `
@@ -62,6 +70,7 @@ export const generateRoomDecoration = async (base64Image: string, style: DesignS
 
 export const generateConstructionPhase = async (imageUrl: string, phase: ConstructionPhaseType, propertyDescription: string): Promise<string | undefined> => {
   try {
+    const ai = getAI();
     let imagePart = null;
     try {
         const imgResponse = await fetch(imageUrl);
@@ -69,7 +78,6 @@ export const generateConstructionPhase = async (imageUrl: string, phase: Constru
         const base64 = await new Promise<string>((resolve) => {
             const reader = new FileReader();
             reader.onloadend = () => resolve(reader.result as string);
-            // Fix typo: readAsAsDataURL corrected to readAsDataURL
             reader.readAsDataURL(blob);
         });
         const cleanBase64 = base64.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
